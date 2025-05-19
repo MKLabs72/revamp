@@ -1,0 +1,9 @@
+# React
+frontend/node_modules/
+frontend/build/
+
+# Remix artifacts (if any)
+contracts/*.json
+
+# Local secrets
+frontend/.env
