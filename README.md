@@ -1,5 +1,4 @@
-# Revamp Protocol
-# Revamp Protocol
+# Revamp Protocol with Shareholding
 
 A smart-contract protocol for…
   
