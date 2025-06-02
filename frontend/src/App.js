@@ -23,7 +23,7 @@ import {
 } from "./constants";
 import FluviaABI from "./abis/FluviaDeFi.json";
 
-//import WSHAREPurchaseModal from "./components/WSHAREPurchaseModal";
+
 import NavbarComp from "./components/Navbar";
 import MobileNavBar from "./components/MobileNavBar";
 import ShareholdingDashboard from "./components/ShareholdingDashboard";
