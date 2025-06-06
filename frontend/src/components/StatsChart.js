@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { JsonRpcProvider, Contract, formatEther } from "ethers";
 import { DEFI_ADDRESSES } from "../constants";
-import FluviaABI from "../abis/FluviaDeFi.json";
+import RevampABI from "../abis/RevampDeFi.json";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -39,7 +39,7 @@ export default function StatsChart({ selectedNetwork }) {
       if (!addr) return;
       try {
         const provider = new JsonRpcProvider(selectedNetwork.rpcUrl);
-        const coreDefi = new Contract(addr, FluviaABI, provider);
+        const coreDefi = new Contract(addr, RevampABI, provider);
 
         // **Swapped** getTotalListingFees → totalListingFees
         const feesBn = await coreDefi.totalListingFees();
@@ -144,7 +144,7 @@ export default function StatsChart({ selectedNetwork }) {
           style={{
             fontSize: "1.24rem",
             fontWeight: 600,
-            color: "var(--rvnwl-accent-cyan)",
+            color: "var(--rvnwl-accent-burn)",
             marginBottom: 0,
             letterSpacing: ".04em",
             textTransform: "uppercase"
@@ -156,7 +156,7 @@ export default function StatsChart({ selectedNetwork }) {
           style={{
             height: 3,
             width: "100%",
-            background: "linear-gradient(90deg, var(--rvnwl-accent-cyan) 30%, transparent 100%)",
+            background: "linear-gradient(90deg, var(--rvnwl-accent-burn) 30%, transparent 100%)",
             margin: "10px 0 0 0",
             borderRadius: 2
           }}
@@ -227,49 +227,22 @@ export default function StatsChart({ selectedNetwork }) {
               >
                 Current Summary
               </div>
-              <div style={{ marginBottom: 12 }}>
-                <span style={{ color: "#abbfd5", fontWeight: 400 }}>
-                  Latest Listing Fees:
-                </span>
-                <span
-                  style={{
-                    color: "#fb39a3",
-                    fontWeight: 600,
-                    fontSize: "1.12rem",
-                    marginLeft: 6
-                  }}
-                >
-                  {latestFees.toFixed(4)} {selectedNetwork?.currency}
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}>
+                <span style={{ fontWeight: 400, color: "#abbfd5" }}>Latest Listing Fees:</span>
+                <span style={{ fontWeight: 600, color: "#fb39a3", fontSize: "1.18rem" }}>
+                {latestFees.toFixed(4)} {selectedNetwork?.currency}
                 </span>
               </div>
-              <div style={{ marginBottom: 12 }}>
-                <span style={{ color: "#abbfd5", fontWeight: 400 }}>
-                  Total Contributed:
-                </span>
-                <span
-                  style={{
-                    color: "#3bf6b1",
-                    fontWeight: 600,
-                    fontSize: "1.12rem",
-                    marginLeft: 6
-                  }}
-                >
-                  {latestContrib.toFixed(4)} {selectedNetwork?.currency}
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}>
+                <span style={{ fontWeight: 400, color: "#abbfd5" }}>Total Contributed:</span>
+                <span style={{ fontWeight: 600, color: "#3bf6b1", fontSize: "1.18rem" }}>
+                {latestContrib.toFixed(4)} {selectedNetwork?.currency}
                 </span>
               </div>
-              <div style={{ marginBottom: 12 }}>
-                <span style={{ color: "#abbfd5", fontWeight: 400 }}>
-                  Fees as % of Contrib.:
-                </span>
-                <span
-                  style={{
-                    color: "#31c9ff",
-                    fontWeight: 600,
-                    fontSize: "1.12rem",
-                    marginLeft: 6
-                  }}
-                >
-                  {feeRatio}%
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}>
+                <span style={{ fontWeight: 400, color: "#abbfd5" }}>Fees as % of Contrib.:</span>
+                <span style={{ fontWeight: 600, color: "#31c9ff", fontSize: "1.18rem" }}>
+                {feeRatio}%
                 </span>
               </div>
               <div className="text-center mt-2" style={{ marginTop: "auto" }}>

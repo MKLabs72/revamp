@@ -18,7 +18,7 @@ import {
   formatEther,
   parseEther
 } from "ethers";
-import openShareABI from "../abis/OpenShareABI.json";
+import ShareHoldingABI from "../abis/ShareHolding.json";
 import {
   AVAILABLE_NETWORKS,
   SHAREHOLDING_ADDRESSES
@@ -49,13 +49,14 @@ Chart.register(
   BarController
 );
 
-const iface = new Interface(openShareABI);
+const iface = new Interface(ShareHoldingABI);
 const PRICE_TOPIC0 = id("PriceHistory(uint256,uint256,uint256)");
 
 export default function ShareholdingDashboard({ signer, selectedNetwork }) {
   const navigate = useNavigate();
   const [currentChain, setCurrentChain] = useState(null);
   const [chainOk, setChainOk] = useState(true);
+
   useEffect(() => {
     async function checkChain() {
       if (!window.ethereum) {
@@ -77,6 +78,7 @@ export default function ShareholdingDashboard({ signer, selectedNetwork }) {
     window.ethereum?.on("chainChanged", checkChain);
     return () => window.ethereum?.removeListener("chainChanged", checkChain);
   }, [selectedNetwork]);
+
   const hardRefresh = () => { navigate("/shareholding"); window.location.reload(); };
 
   const contractAddress = useMemo(
@@ -85,7 +87,7 @@ export default function ShareholdingDashboard({ signer, selectedNetwork }) {
   );
   const contract = useMemo(
     () => signer && contractAddress
-      ? new Contract(contractAddress, openShareABI, signer) : null,
+      ? new Contract(contractAddress, ShareHoldingABI, signer) : null,
     [signer, contractAddress]
   );
   const priceHistoryScrollRef = useRef(null);
@@ -99,7 +101,7 @@ export default function ShareholdingDashboard({ signer, selectedNetwork }) {
   const [userStats, setUserStats] = useState({
     userShares: "0", userSalesRewards: "0", userSystemRewards: "0"
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [showBuy, setShowBuy] = useState(false);
@@ -109,17 +111,25 @@ export default function ShareholdingDashboard({ signer, selectedNetwork }) {
   const [walletBal, setWalletBal] = useState("0");
   const [estShares, setEstShares] = useState("");
   const [agreeTC, setAgreeTC] = useState(false);
+
   const [processing, setProcessing] = useState(false);
+
+  // Transaction hash and modals for buy/join, claim, reinvest
   const [txHash, setTxHash] = useState(null);
   const [showTxModal, setShowTxModal] = useState(false);
-  const closeTxModal = () => { setShowTxModal(false); setTxHash(null); };
+  const [claimTxHash, setClaimTxHash] = useState(null);
+  const [showClaimTxModal, setShowClaimTxModal] = useState(false);
+  const [reinvestTxHash, setReinvestTxHash] = useState(null);
+  const [showReinvestTxModal, setShowReinvestTxModal] = useState(false);
 
+  // For hard refresh after success modal close
+  const refreshAfterModal = () => window.location.reload();
 
-const priceLabels = historicalData.map(d =>
-  new Date(d.timestamp * 1000).toLocaleDateString()
-);
-const priceData = historicalData.map(d => d.price);
-const volumeData = historicalData.map(d => d.volume);
+  const priceLabels = historicalData.map(d =>
+    new Date(d.timestamp * 1000).toLocaleDateString()
+  );
+  const priceData = historicalData.map(d => d.price);
+  const volumeData = historicalData.map(d => d.volume);
 
   // Data loaders
   const fetchGlobal = useCallback(async () => {
@@ -145,26 +155,20 @@ const volumeData = historicalData.map(d => d.volume);
   }, [contract, signer]);
 
   const PAGE = 5000;
-  const BLOCKS_PER_DAY = 6500;   // Polygon
-  const LOOKBACK_DAYS = 90;      // Or any period you want
-  
+  const BLOCKS_PER_DAY = 6500;
+  const LOOKBACK_DAYS = 90;
+
   const loadHistory = useCallback(async () => {
     if (!contract) return;
     setHistoryLoading(true);
     try {
-      // 1. Fetch the contract's deployment block
       let deploymentBlock = 0;
       try {
         deploymentBlock = Number(await contract.startBlock());
       } catch {}
-      // 2. Get latest block
       const provider = new BrowserProvider(window.ethereum, "any");
       const latest = await provider.getBlockNumber();
-      // 3. Calculate fromBlock: either deploymentBlock or lookbackDays ago, whichever is greater
       const earliest = Math.max(latest - BLOCKS_PER_DAY * LOOKBACK_DAYS, deploymentBlock);
-      // 4. Log for debug
-      console.log("Fetching logs from", earliest, "to", latest);
-      // 5. Fetch in pages
       const ranges = [];
       for (let from = earliest; from <= latest; from += PAGE) {
         ranges.push([from, Math.min(from + PAGE - 1, latest)]);
@@ -195,7 +199,6 @@ const volumeData = historicalData.map(d => d.volume);
     }
     setHistoryLoading(false);
   }, [contract]);
-  
 
   useEffect(() => {
     (async () => {
@@ -219,12 +222,9 @@ const volumeData = historicalData.map(d => d.volume);
     })();
   }, [contract, chainOk, fetchGlobal, fetchUser, loadHistory, signer]);
 
-  // Handlers
-  const onSpend = (v) => {
-    setNativeSpend(v);
-    const p = parseFloat(globalStats.currentPrice);
-    setEstShares(v && p ? (parseFloat(v) / p).toFixed(4) : "");
-  };
+  // -- Transaction Handlers --
+
+  // BUY/JOIN
   const buy = async () => {
     if (!nativeSpend || !agreeTC) return alert("Fill amount & agree T&C");
     if (parseFloat(nativeSpend) > parseFloat(walletBal))
@@ -233,7 +233,8 @@ const volumeData = historicalData.map(d => d.volume);
     try {
       const tx = await contract.buyShares({ value: parseEther(nativeSpend) });
       await tx.wait();
-      setTxHash(tx.hash); setShowTxModal(true);
+      setTxHash(tx.hash);
+      setShowTxModal(true);
       await fetchGlobal(); await fetchUser(); await loadHistory();
       setShowBuy(false);
     } catch (err) {
@@ -242,11 +243,15 @@ const volumeData = historicalData.map(d => d.volume);
       setProcessing(false); setNativeSpend("");
     }
   };
+
+  // CLAIM
   const claim = async () => {
     setProcessing(true);
     try {
       const tx = await contract.claimRewards();
       await tx.wait();
+      setClaimTxHash(tx.hash);
+      setShowClaimTxModal(true);
       await fetchUser();
       setShowClaim(false);
     } catch (err) {
@@ -256,7 +261,33 @@ const volumeData = historicalData.map(d => d.volume);
     }
   };
 
-  // Chart data
+  // REINVEST: buyShares using all unclaimed rewards as value
+  const reinvest = async () => {
+    setProcessing(true);
+    try {
+      const tx = await contract.reinvestRewards();
+      await tx.wait();
+      setReinvestTxHash(tx.hash);
+      setShowReinvestTxModal(true);
+      // Refetch all relevant data so UI reflects on-chain state!
+      await fetchGlobal();
+      await fetchUser();
+      await loadHistory();
+    } catch (err) {
+      console.error(err);
+      alert("Reinvest failed or cancelled");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  // UI utils
+  const onSpend = (v) => {
+    setNativeSpend(v);
+    const p = parseFloat(globalStats.currentPrice);
+    setEstShares(v && p ? (parseFloat(v) / p).toFixed(4) : "");
+  };
+
   const userShare = parseFloat(userStats.userShares) || 0;
   const restShare = Math.max(100 - userShare, 0);
 
@@ -266,16 +297,15 @@ const volumeData = historicalData.map(d => d.volume);
       {
         data: [userShare, restShare],
         backgroundColor: [
-          "#ff5c1e",  // "You" — vibrant orange
-          "#26ffe3"   // "Others" — neon cyan
+          "#ff5c1e",
+          "#26ffe3"
         ],
-        borderWidth: 0, // Clean, modern look
+        borderWidth: 0,
         hoverOffset: 7
       }
     ]
   };
 
-  // Use fixed legend text color for best visibility (as in Revamp)
   const pieOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -285,7 +315,7 @@ const volumeData = historicalData.map(d => d.volume);
         position: "bottom",
         labels: {
           font: { family: "Inter", size: 13, weight: 600 },
-          color: "#9beffc", // Always readable, proven in revamp card!
+          color: "#9beffc",
           usePointStyle: true,
           padding: 14
         }
@@ -323,7 +353,7 @@ const volumeData = historicalData.map(d => d.volume);
       },
     ],
   };
-  
+
   const lineChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -408,15 +438,42 @@ const volumeData = historicalData.map(d => d.volume);
   }, [contract]);
 
   useEffect(() => {
-    // Only on small screens
     if (window.innerWidth <= 991 && priceHistoryScrollRef.current) {
       const container = priceHistoryScrollRef.current;
-      // Center the scroll
       container.scrollLeft = (container.scrollWidth - container.clientWidth) / 2.4;
     }
-  }, [])
+  }, []);
 
+  // ------ Transaction Success Modals ------
+  const explorerUrl =
+    currentChain?.blockExplorerUrls?.[0] ||
+    "https://polygonscan.com";
 
+  // ------ Transaction Processing Overlay ------
+  // This overlays the whole UI during tx
+  const processingOverlay = (
+    processing && (
+      <div
+        className="processing-overlay"
+        style={{
+          position: "fixed",
+          top: 0, left: 0, width: "100vw", height: "100vh",
+          background: "rgba(0,0,0,0.33)",
+          zIndex: 2000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexDirection: "column"
+        }}
+      >
+        <Spinner animation="border" variant="primary" />
+        <p style={{ color: "#fff", marginTop: 16, fontSize: "1.2em", fontWeight: 400 }}>
+          Processing transaction…
+        </p>
+      </div>
+    )
+  );
+  // Render
   return (
     <Container
       className="revamp-page"
@@ -428,6 +485,112 @@ const volumeData = historicalData.map(d => d.volume);
         padding: "3.5rem 1.2rem 2rem",
       }}
     >
+
+      {/* --- Tx Success Modal for Buy/Join --- */}
+      <Modal
+        show={showTxModal && !!txHash}
+        onHide={refreshAfterModal}
+        centered
+        dialogClassName="revamp-modal-dialog"
+        contentClassName="revamp-modal"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Successfully Joined!</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="text-center">
+          <p style={{ fontWeight: 500, color: "#0fae65" }}>
+            Your share purchase was confirmed on-chain!
+          </p>
+          <div style={{ wordBreak: "break-all", margin: "18px 0" }}>
+            Tx Hash:{" "}
+            <a
+              href={`${explorerUrl}/tx/${txHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "#297bfb", fontWeight: 600 }}
+            >
+              {txHash?.slice(0, 14)}...{txHash?.slice(-8)}
+            </a>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="success" style={{ fontWeight: 700 }} onClick={refreshAfterModal}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* --- Tx Success Modal for Claim --- */}
+      <Modal
+        show={showClaimTxModal && !!claimTxHash}
+        onHide={refreshAfterModal}
+        centered
+        dialogClassName="revamp-modal-dialog"
+        contentClassName="revamp-modal"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Claim Successful!</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="text-center">
+          <p style={{ fontWeight: 500, color: "#0fae65" }}>
+            Your rewards claim was confirmed on-chain!
+          </p>
+          <div style={{ wordBreak: "break-all", margin: "18px 0" }}>
+            Tx Hash:{" "}
+            <a
+              href={`${explorerUrl}/tx/${claimTxHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "#297bfb", fontWeight: 600 }}
+            >
+              {claimTxHash?.slice(0, 14)}...{claimTxHash?.slice(-8)}
+            </a>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="success" style={{ fontWeight: 700 }} onClick={refreshAfterModal}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* --- Tx Success Modal for Reinvest --- */}
+      <Modal
+        show={showReinvestTxModal && !!reinvestTxHash}
+        onHide={refreshAfterModal}
+        centered
+        dialogClassName="revamp-modal-dialog"
+        contentClassName="revamp-modal"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Reinvest Successful!</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="text-center">
+          <p style={{ fontWeight: 500, color: "#0fae65" }}>
+            Your reinvestment was confirmed on-chain!<br/>
+            <span style={{ color: "#3ae", fontWeight: 400, fontSize: "0.97em" }}>
+              Rewards have been compounded into new shares.
+            </span>
+          </p>
+          <div style={{ wordBreak: "break-all", margin: "18px 0" }}>
+            Tx Hash:{" "}
+            <a
+              href={`${explorerUrl}/tx/${reinvestTxHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "#297bfb", fontWeight: 600 }}
+            >
+              {reinvestTxHash?.slice(0, 14)}...{reinvestTxHash?.slice(-8)}
+            </a>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="success" style={{ fontWeight: 700 }} onClick={refreshAfterModal}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
       {/* Network mismatch warning */}
       {!chainOk && (
         <Alert variant="warning" className="d-flex flex-wrap align-items-center mt-3">
@@ -455,29 +618,29 @@ const volumeData = historicalData.map(d => d.volume);
       <h2
         className="text-center"
         style={{
-          fontWeight: 900,
+          fontWeight: 800,
           fontSize: "2.05rem",
           letterSpacing: ".02em",
-          color: "var(--rvnwl-accent-cyan)",
-          margin: "1.6rem 0 0.5rem"
+          color: "var(--rvnwl-accent-burn)",
+          margin: "3rem 0 0.5rem"
         }}
       >
-        Shareholding Pool
+        ShareHolding Pool
       </h2>
       <div
-        className="mx-auto mb-4"
+        className="mx-auto mb-2"
         style={{
-          width: 68,
+          width: 220,
           height: 4,
-          background: "linear-gradient(90deg, var(--rvnwl-accent-cyan) 30%, transparent 100%)",
+          background: "linear-gradient(90deg, var(--rvnwl-accent-burn) 30%, transparent 100%)",
           borderRadius: 2,
         }}
       />
-      <p className="rev-subtext text-center mb-5" style={{ fontSize: "1.13rem", opacity: 0.84 }}>
-        Own a share of the protocol’s revenue. Earn on every new purchase, plus proportional rewards from the global pool.
+      <p className="rev-subtext text-center mb-3" style={{ fontSize: "1.13rem", opacity: 0.84 }}>
+        Own a share of the protocol’s revenue. Earn on every new contribution, plus proportional rewards from the global pool.
       </p>
 
-      {/* ======= Metric Cards Row (fixed width grid, 3 equal cards, max 1800px) ======= */}
+      {/* ======= Metric Cards Row ======= */}
       <div className="dashboard-metrics-grid">
         {/* Global Stats */}
         <Card className="dashboard-card" style={{ minHeight: 370 }}>
@@ -492,7 +655,7 @@ const volumeData = historicalData.map(d => d.volume);
               style={{
                 fontSize: "1.32rem",
                 fontWeight: 600,
-                color: "var(--rvnwl-accent-cyan)",
+                color: "var(--rvnwl-accent-burn)",
                 marginBottom: 0,
                 letterSpacing: ".04em",
                 textTransform: "uppercase"
@@ -504,38 +667,37 @@ const volumeData = historicalData.map(d => d.volume);
               style={{
                 height: 3,
                 width: "100%",
-                background: "linear-gradient(90deg, var(--rvnwl-accent-cyan) 30%, transparent 100%)",
+                background: "linear-gradient(90deg, var(--rvnwl-accent-burn) 30%, transparent 100%)",
                 margin: "10px 0 0 0",
                 borderRadius: 2
               }}
             />
           </Card.Header>
           <div className="card-body" style={{ marginTop: 18 }}>
-            {/* ...your stats code as before... */}
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}>
-              <span style={{ fontWeight: 500, color: "var(--rvnwl-accent-cyan)" }}>Current Price:</span>
-              <span style={{ fontWeight: 700, color: "var(--rvnwl-accent-burn)" }}>
+              <span style={{ fontWeight: 400, color: "var(--rvnwl-accent-cyan)" }}>SHARE Join Price:</span>
+              <span style={{ fontWeight: 600, color: "var(--rvnwl-accent-burn)" }}>
                 {parseFloat(globalStats.currentPrice).toFixed(6)} {currentChain?.currency}
               </span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-              <span>Last Purchase:</span>
-              <span style={{ fontWeight: 700, color: "#8bc6fa" }}>
+              <span style={{ fontWeight: 400, color: "abbfd5" }}>At last contribution:</span>
+              <span style={{ fontWeight: 600, color: "#8bc6fa" }}>
                 {parseFloat(globalStats.lastPurchasePrice).toFixed(6)} {currentChain?.currency}
               </span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-              <span>Total Volume:</span>
-              <span style={{ fontWeight: 700, color: "#f7ba7a" }}>
+              <span style={{ fontWeight: 400, color: "abbfd5" }}>Total Contributed:</span>
+              <span style={{ fontWeight: 600, color: "#f7ba7a" }}>
                 {parseFloat(globalStats.totalVolumePurchased).toFixed(2)} {currentChain?.currency}
               </span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span>Total Holders:</span>
-              <span style={{ fontWeight: 700, color: "#f7eb7a" }}>{globalStats.totalHolders}</span>
+              <span style={{ fontWeight: 400, color: "abbfd5" }}>Total Contributors:</span>
+              <span style={{ fontWeight: 600, color: "#f7eb7a" }}>{globalStats.totalHolders}</span>
             </div>
             <Button className="mt-4 w-100" variant="primary" onClick={() => setShowBuy(true)}>
-              Buy SHARE
+              Join ShareHolding Pool
             </Button>
           </div>
         </Card>
@@ -553,7 +715,7 @@ const volumeData = historicalData.map(d => d.volume);
               style={{
                 fontSize: "1.32rem",
                 fontWeight: 600,
-                color: "var(--rvnwl-accent-cyan)",
+                color: "var(--rvnwl-accent-burn)",
                 marginBottom: 0,
                 letterSpacing: ".04em",
                 textTransform: "uppercase"
@@ -565,33 +727,73 @@ const volumeData = historicalData.map(d => d.volume);
               style={{
                 height: 3,
                 width: "100%",
-                background: "linear-gradient(90deg, var(--rvnwl-accent-cyan) 30%, transparent 100%)",
+                background: "linear-gradient(90deg, var(--rvnwl-accent-burn) 30%, transparent 100%)",
                 margin: "10px 0 0 0",
                 borderRadius: 2
               }}
             />
           </Card.Header>
           <div className="card-body" style={{ marginTop: 18 }}>
-            {/* ...your stats code as before... */}
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}>
-              <span style={{ fontWeight: 600, color: "var(--rvnwl-accent-cyan)" }}>Balance:</span>
-              <span style={{ fontWeight: 900, color: "var(--rvnwl-accent-burn)" }}>{userShare.toFixed(4)} SHARE</span>
+              <span style={{ fontWeight: 400, color: "var(--rvnwl-accent-cyan)" }}>Balance:</span>
+              <span style={{ fontWeight: 600, color: "var(--rvnwl-accent-burn)" }}>{userShare.toFixed(4)} SHARE</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-              <span style={{ fontWeight: 500 }}>Unclaimed Sales:</span>
-              <span style={{ fontWeight: 700, color: "#00e898" }}>{parseFloat(userStats.userSalesRewards).toFixed(4)} {currentChain?.currency}</span>
+              <span style={{ fontWeight: 400 }}>Unclaimed Sales:</span>
+              <span style={{ fontWeight: 600, color: "#00e898" }}>{parseFloat(userStats.userSalesRewards).toFixed(4)} {currentChain?.currency}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-              <span style={{ fontWeight: 500 }}>Unclaimed Fees:</span>
-              <span style={{ fontWeight: 700, color: "#ff8e65" }}>{parseFloat(userStats.userSystemRewards).toFixed(4)} {currentChain?.currency}</span>
+              <span style={{ fontWeight: 400 }}>Unclaimed Fees:</span>
+              <span style={{ fontWeight: 600, color: "#ff8e65" }}>{parseFloat(userStats.userSystemRewards).toFixed(4)} {currentChain?.currency}</span>
             </div>
             <div className="d-flex gap-2 mt-4">
-              <Button variant="outline-success" className="w-100" onClick={() => setShowClaim(true)}>
+              <Button
+                variant="outline-success"
+                className="w-100"
+                onClick={() => setShowClaim(true)}
+                disabled={processing} // Also disable during reinvest!
+              >
                 Claim Rewards
               </Button>
-              <Button variant="outline-primary" className="w-100" onClick={claim}>
-                Reinvest Rewards
-              </Button>
+              <div style={{ position: "relative", width: "100%" }}>
+                <Button
+                  variant="outline-primary"
+                  className="w-100"
+                  onClick={reinvest}
+                  disabled={
+                    processing ||
+                    (parseFloat(userStats.userSalesRewards) + parseFloat(userStats.userSystemRewards)) <= 0
+                  }
+                  style={{ position: "relative" }}
+                >
+                  {processing ? (
+                    <>
+                      <span
+                        style={{
+                          position: "absolute",
+                          left: "50%", top: "50%",
+                          transform: "translate(-50%, -50%)",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          width: "100%",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Spinner
+                          animation="border"
+                          size="sm"
+                          style={{ marginRight: 7, verticalAlign: "middle" }}
+                        />
+                        Processing…
+                      </span>
+                      <span style={{ opacity: 0 }}>Reinvest Rewards</span>
+                    </>
+                  ) : (
+                    "Reinvest Rewards"
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         </Card>
@@ -609,7 +811,7 @@ const volumeData = historicalData.map(d => d.volume);
               style={{
                 fontSize: "1.32rem",
                 fontWeight: 600,
-                color: "var(--rvnwl-accent-cyan)",
+                color: "var(--rvnwl-accent-burn)",
                 marginBottom: 0,
                 letterSpacing: ".04em",
                 textTransform: "uppercase"
@@ -621,7 +823,7 @@ const volumeData = historicalData.map(d => d.volume);
               style={{
                 height: 3,
                 width: "100%",
-                background: "linear-gradient(90deg, var(--rvnwl-accent-cyan) 30%, transparent 100%)",
+                background: "linear-gradient(90deg, var(--rvnwl-accent-burn) 30%, transparent 100%)",
                 margin: "10px 0 0 0",
                 borderRadius: 2
               }}
@@ -663,7 +865,7 @@ const volumeData = historicalData.map(d => d.volume);
               style={{
                 fontSize: "1.32rem",
                 fontWeight: 600,
-                color: "var(--rvnwl-accent-cyan)",
+                color: "var(--rvnwl-accent-burn)",
                 marginBottom: 0,
                 letterSpacing: ".04em",
                 textTransform: "uppercase"
@@ -675,7 +877,7 @@ const volumeData = historicalData.map(d => d.volume);
               style={{
                 height: 3,
                 width: "100%",
-                background: "linear-gradient(90deg, var(--rvnwl-accent-cyan) 30%, transparent 100%)",
+                background: "linear-gradient(90deg, var(--rvnwl-accent-burn) 30%, transparent 100%)",
                 margin: "10px 0 0 0",
                 borderRadius: 2
               }}
@@ -715,115 +917,133 @@ const volumeData = historicalData.map(d => d.volume);
 
       {/* --- Buy Modal --- */}
       <Modal show={showBuy} onHide={() => setShowBuy(false)} centered dialogClassName="revamp-modal-dialog" contentClassName="revamp-modal">
-        <Modal.Header closeButton>
+      <Modal.Header closeButton>
         <Modal.Title style={{ fontWeight: 700, letterSpacing: ".04em" }}>
-            Buy SHARE</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {processing && (
-            <div className="processing-overlay">
-              <Spinner animation="border" /> <p className="mt-2">Waiting…</p>
-            </div>
-          )}
-          <div className="mb-2" style={{ color: "#b0b8cc", fontWeight: 700 }}>
-            Wallet: <span style={{ color: "#fff" }}>{parseFloat(walletBal).toFixed(4)} {currentChain?.currency}</span>
-          </div>
-          <Form.Group className="mb-3">
-            <Form.Control
-              type="number"
-              placeholder={`${currentChain?.currency || "Native"} to spend`}
-              value={nativeSpend}
-              onChange={(e) => onSpend(e.target.value)}
-              disabled={processing}
-              className="glass-input"
-            />
-          </Form.Group>
-          {estShares && (
-            <div className="mb-2" style={{ color: "var(--rvnwl-accent-cyan)", fontWeight: 600 }}>
-              Estimated SHARE: {estShares}
-            </div>
-          )}
-          {parseFloat(nativeSpend || 0) > parseFloat(walletBal || 0) && (
-            <Alert variant="warning" className="py-1 px-2 small">
-              Insufficient balance
-            </Alert>
-          )}
-          <Form.Check
-            className="mt-3"
-            type="checkbox"
-            label={
-              <>
-                I agree to the{" "}
-                <Button variant="link" size="sm" className="p-0 align-baseline" onClick={() => setShowTerms(true)} style={{ color: "var(--rvnwl-accent-cyan)" }}>
-                  terms
-                </Button>
-              </>
-            }
-            checked={agreeTC}
-            onChange={(e) => setAgreeTC(e.target.checked)}
-            disabled={processing}
-          />
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowBuy(false)} disabled={processing} style={{ fontWeight: 600 }}>
-            Cancel
-          </Button>
-          <Button
-            onClick={buy}
-            disabled={processing || !agreeTC || !nativeSpend || parseFloat(nativeSpend) > parseFloat(walletBal)}
-            style={{ fontWeight: 600 }}
-            variant="primary"
+          Join ShareHolding Pool
+        </Modal.Title>
+      </Modal.Header>
+      <Modal.Body style={{ position: "relative", minHeight: 200 }}>
+        {processing && (
+          <div
+            className="processing-overlay"
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "rgba(18,23,32,0.95)",
+              zIndex: 10,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
           >
-            {processing ? "Processing…" : "Confirm"}
-          </Button>
-        </Modal.Footer>
-      </Modal>
+            <Spinner animation="border" variant="primary" style={{ width: 46, height: 46 }} />
+            <div style={{ marginTop: 16, fontWeight: 600, fontSize: 18, color: "#9beffc" }}>
+              Processing transaction…
+            </div>
+          </div>
+        )}
 
-      {/* --- Tx-Success Modal --- */}
-      <Modal show={showTxModal} onHide={closeTxModal} centered dialogClassName="revamp-modal-dialog" contentClassName="revamp-modal">
-        <Modal.Header>
-          <Modal.Title className="text-success">Transaction confirmed</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <p className="small text-muted">Your purchase was mined successfully.</p>
-          <p className="small">
-            <strong>Tx Hash: </strong>
-            <a href={`${currentChain?.explorerUrl}/tx/${txHash}`} target="_blank" rel="noopener noreferrer" style={{ color: "var(--rvnwl-accent-cyan)" }}>
-              {txHash?.slice(0,12)}…{txHash?.slice(-12)}
-            </a>
-          </p>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="success" style={{fontWeight: 600 }} onClick={closeTxModal}>Close</Button>
-        </Modal.Footer>
-      </Modal>
+        {/* Form fields only visible when NOT processing */}
+        {!processing && (
+          <>
+            <div className="mb-2" style={{ color: "#b0b8cc", fontWeight: 700 }}>
+              Wallet Balance: <span style={{ color: "#fff" }}>{parseFloat(walletBal).toFixed(4)} {currentChain?.currency}</span>
+            </div>
+            <Form.Group className="mb-3">
+              <Form.Control
+                type="number"
+                placeholder={`Enter ${currentChain?.currency || "Native"} amount to contribute`}
+                value={nativeSpend}
+                onChange={(e) => onSpend(e.target.value)}
+                className="glass-input"
+              />
+            </Form.Group>
+            {estShares && (
+              <div className="mb-2" style={{ color: "var(--rvnwl-accent-cyan)", fontWeight: 600 }}>
+                Estimated Acquisition: {parseFloat(estShares).toFixed(8)} SHARE
+              </div>
+            )}
+            {parseFloat(nativeSpend || 0) > parseFloat(walletBal || 0) && (
+              <Alert variant="warning" className="py-1 px-2 small">
+                Insufficient balance
+              </Alert>
+            )}
+            <Form.Check
+              className="mt-3"
+              type="checkbox"
+              label={
+                <>
+                  I agree to the{" "}
+                  <Button variant="link" size="sm" className="p-0 align-baseline" onClick={() => setShowTerms(true)} style={{ color: "var(--rvnwl-accent-cyan)" }}>
+                    ShareHolding terms
+                  </Button>.
+                </>
+              }
+              checked={agreeTC}
+              onChange={(e) => setAgreeTC(e.target.checked)}
+            />
+          </>
+        )}
+      </Modal.Body>
+      <Modal.Footer>
+        <Button variant="secondary" onClick={() => setShowBuy(false)} disabled={processing} style={{ fontWeight: 600 }}>
+          Cancel
+        </Button>
+        <Button
+          onClick={buy}
+          disabled={processing || !agreeTC || !nativeSpend || parseFloat(nativeSpend) > parseFloat(walletBal)}
+          style={{ fontWeight: 600 }}
+          variant="primary"
+        >
+          {processing ? "Processing…" : "Confirm"}
+        </Button>
+      </Modal.Footer>
+    </Modal>
 
-      {/* --- Terms & Conditions --- */}
+      {/* --- Terms Modal --- */}
       <Modal show={showTerms} onHide={() => setShowTerms(false)} centered dialogClassName="revamp-modal-dialog tandc-modal" contentClassName="revamp-modal tandc-modal" backdropClassName="tandc-modal-backdrop">
         <Modal.Header closeButton>
           <Modal.Title>Terms &amp; Conditions</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p className="small">
-            By purchasing <strong>SHARE</strong> you acknowledge and accept:
+          <p className="small mb-0">
+            By joining the Shareholding Pool through this interface, you acknowledge and accept:
+            <ul className="small mb-0 mt-2">
+              <li>
+                You are not purchasing a tradeable or transferable token, but rather acquiring a proportional share of the pool’s ongoing revenue and participation rights.
+              </li>
+              <li>
+                The Shareholding Pool consists of exactly 100 total shares. Shares never leave the protocol contract; they are redistributed among participants in accordance with protocol rules.
+              </li>
+              <li>
+                Your contribution (in network native currency) is immediately and proportionally distributed to current pool participants per protocol logic. All contributions are final and non-refundable.
+              </li>
+              <li>
+                Rewards and revenue originate solely from subsequent participant contributions and protocol fees. No future rewards, returns, or value appreciation are guaranteed.
+              </li>
+              <li>
+                Share value, reward rates, and protocol operations are subject to change based on ongoing participation and evolving platform rules.
+              </li>
+              <li>
+                All smart contract transactions are irreversible once submitted and mined on the blockchain.
+              </li>
+              <li>
+                No entity behind this interface provides investment, legal, or tax advice. Participation is at your own risk and discretion.
+              </li>
+              <li>
+                Carefully review all protocol documentation and risk disclosures before joining. Participate only if you fully understand the Shareholding Pool mechanism and associated risks.
+              </li>
+              <li>
+                Source code:&nbsp;
+                visit protocol's <a href="https://github.com/MKLabs72/revamp" target="_blank" rel="noopener noreferrer">
+                  GitHub repo.
+                </a>
+              </li>
+            </ul>
+            <br />
+            <strong>Precautionary Notice:</strong> If you are uncertain, have doubts, or are not 100% sure about your participation, do not proceed. Only continue if you have conducted adequate research and fully understand the platform’s risks and mechanics.
           </p>
-          <ul className="small mb-0">
-            <li>Cryptocurrency prices are highly volatile; values can go to zero.</li>
-            <li>All smart-contract interactions are irreversible once mined.</li>
-            <li>No entity behind this interface provides investment advice.</li>
-            <li>
-              Full documentation:{" "}
-              <a href="https://docs.revya.io" target="_blank" rel="noopener noreferrer">
-                docs.revya.io
-              </a>
-            </li>
-            <li>
-              Source code:{" "}
-              <a href="https://github.com/revya/protocol" target="_blank" rel="noopener noreferrer">
-                GitHub repo
-              </a>
-            </li>
-          </ul>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" style={{fontWeight: 600 }} onClick={() => setShowTerms(false)}>Close</Button>
@@ -837,8 +1057,16 @@ const volumeData = historicalData.map(d => d.volume);
             Claim Rewards</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <div style={{ color: "#00e898", fontWeight: 600 }}>Sales: {parseFloat(userStats.userSalesRewards).toFixed(2)} {currentChain?.currency}</div>
-          <div style={{ color: "#ff8e65", fontWeight: 600 }}>Fees: {parseFloat(userStats.userSystemRewards).toFixed(2)} {currentChain?.currency}</div>
+          <div style={{ color: "#00e898", fontWeight: 600 }}>Sales: {parseFloat(userStats.userSalesRewards).toFixed(4)} {currentChain?.currency}</div>
+          <div style={{ color: "#ff8e65", fontWeight: 600 }}>Fees: {parseFloat(userStats.userSystemRewards).toFixed(4)} {currentChain?.currency}</div>
+          {processing && (
+          <div className="processing-overlay">
+            <Spinner animation="border" variant="info" />
+            <div className="mt-2" style={{ color: "#9beffc", fontWeight: 500 }}>
+              Processing transaction…
+            </div>
+          </div>
+        )}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowClaim(false)} style={{fontWeight: 600 }} disabled={processing}>Cancel</Button>

@@ -4,7 +4,7 @@
    :root {
     /* --- Brand Core Palette --- */
     --rvnwl-space:  #0A0A0E;   /* deep space bg */
-    --rvnwl-ember:  #FF5C1E;   /* plasma burn */
+    --rvnwl-ember:  #F63D20;   /* plasma burn */
     --rvnwl-glow:   #FF7640;   /* flash/hover */
     --rvnwl-cyan:   #0CF2E0;   /* stellar cyan */
     --rvnwl-ivory:  #F2F2F2;   /* light text */
@@ -156,7 +156,7 @@
   }
   .top-bar .theme-toggle-btn:hover,
   .top-bar .navbar-nav .nav-link:hover {
-    color: var(--rvnwl-accent-cyan) !important;
+    color: var(--rvnwl-accent-burn) !important;
     opacity: 1;
   }
   .top-bar .connect-text {
@@ -346,7 +346,15 @@
     margin: 0 auto 2.5rem auto;
     text-align: center;
     line-height: 1.45;
+  }
+  .phero {
+    font-size: 1rem;
+    max-width: 1800px;
+    color: var(--card-text);
+    opacity: 0.85;
+    margin: 2.5rem auto 2.5rem auto;
     text-align: center;
+    line-height: 1.45;
   }
   
   /* =========================
@@ -378,7 +386,101 @@
     justify-content: center;
     margin: 2.5rem 0;
   }
-  
+
+  /* --- Button Row for Hero --- */
+.hero-btn-row {
+  gap: 1.1rem;
+  margin-bottom: 2.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+@media (max-width: 600px) {
+  .hero-btn-row { flex-direction: column; gap: 0.9rem; }
+}
+
+/* Ensure .hero-btn-aligned uses the same max-width as .info-grid */
+.hero-btn-aligned {
+  display: grid;
+  grid-template-columns: 1fr 1fr;    /* two equal-width columns */
+  gap: 1.5rem;                         /* match .info-grid gap */
+  max-width: 1040px;                 /* match .info-grid width */
+  width: 100%;
+  margin: 2.5rem auto ;
+  padding: 0;
+}
+
+.hero-btn-aligned .btn-primary,
+.hero-btn-aligned .btn-secondary {
+  width: 100%;                       /* fill grid cell */
+  font-size: 1.17rem;
+  margin: 0;                         /* reset any button margin */
+  border-radius: 0.6rem;             /* match .info-card border-radius visually */
+  box-sizing: border-box;
+}
+
+/* On mobile, stack vertically and full width */
+@media (max-width: 700px) {
+  .hero-btn-aligned {
+    grid-template-columns: 1fr;
+    gap: 1.15rem;
+    max-width: 98vw;
+  }
+  .hero-btn-aligned .btn-primary,
+  .hero-btn-aligned .btn-secondary {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+/* --- Parallax Floating Card Effects --- */
+.parallax-cards .parallax-card {
+  will-change: transform;
+  transition: transform 0.33s cubic-bezier(.44,.14,.33,1), box-shadow 0.19s, border-color 0.21s;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+  /* Subtle depth */
+}
+.parallax-cards .parallax-card:hover {
+  box-shadow: 0 16px 40px rgba(246,61,32,0.12), 0 1.5px 6px 0 rgba(255,92,30,0.09);
+  transform: translateY(-9px) scale(1.028);
+  border-color: var(--rvnwl-accent-burn) !important;
+  z-index: 3;
+}
+
+/* --- Scroll Parallax: gently floats upward as you scroll --- */
+@media (min-width: 641px) {
+  .parallax-cards .parallax-card {
+    /* JS will set transform dynamically for parallax */
+  }
+}
+
+/* --- Parallax Table Effect --- */
+.parallax-table {
+  will-change: transform;
+  transition: box-shadow 0.19s, transform 0.38s cubic-bezier(.48,.11,.19,1);
+  /*box-shadow: 0 12px 46px 0 rgba(246,61,32,0.12), 0 1.5px 8px 0 rgba(255,92,30,0.10);*/
+  border-radius: 1.18rem;
+  background: linear-gradient(134deg, #161a22 0%, #232834 100%);
+  /*padding: 2.6rem 2rem 2.2rem 2rem;*/
+}
+
+/* --- Animate table section on scroll --- */
+@media (min-width: 641px) {
+  .parallax-table {
+    /* JS will set transform dynamically for parallax */
+  }
+}
+
+@media (max-width: 1100px) {
+  .table-responsive {
+    overflow-x: auto;
+    min-width: 0;
+    padding-bottom: 1.2rem;
+  }
+  .table {
+    min-width: 860px;
+  }
+}
   /* =========================
      NAVBAR CTA BUTTON (OUTLINE)
      ========================= */
@@ -399,13 +501,29 @@
     color: var(--rvnwl-ivory) !important;
   }
   
+  .heartbeat-separator {
+    margin: 0.1rem auto 2rem auto;
+    max-width: 500px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  @media (max-width: 600px) {
+    .heartbeat-separator {
+      margin: 1.1rem auto 1.2rem auto;
+      max-width: 98vw;
+    }
+  }
+
   /* =========================
      INFO GRID & CARD LAYOUT
      ========================= */
   .info-grid {
     width: 100%;
-    max-width: 1040px;
+    max-width: 1600px;
     margin: 0 auto 3rem auto;
+    margin-top: 0 !important;
     display: grid;
     gap: 2rem;
   }
@@ -416,7 +534,7 @@
     .info-grid { grid-template-columns: 1fr; }
   }
   @media (min-width: 1600px) {
-    .landing-content, .info-grid { max-width: 1140px; }
+    .landing-content, .info-grid { max-width: 1600px; }
   }
   
   /* =========================
@@ -436,8 +554,8 @@
     transition: box-shadow .18s, border-color .19s, transform .14s;
   }
   .info-card:hover {
-    border-color: var(--rvnwl-accent-cyan);
-    box-shadow: 0 8px 32px 0 rgba(12,242,224,0.13), 0 1.5px 4px 0 rgba(255,92,30,0.09);
+    border-color: var(--rvnwl-accent-burn);
+    box-shadow: 0 8px 32px 0 rgba(246,61,32,0.13), 0 1.5px 4px 0 rgba(255,92,30,0.09);
     transform: translateY(-2px) scale(1.016);
   }
   .info-card-content { flex-grow: 1; }
@@ -454,7 +572,7 @@
   .info-card h2 {
     font-size: 1.28rem;
     font-weight: 600;
-    color: var(--rvnwl-accent-cyan);
+    color: var(--rvnwl-accent-burn);
     letter-spacing: 0.01em;
     margin-bottom: 0.8rem;
     text-transform: uppercase;
@@ -485,7 +603,73 @@
     background: var(--rvnwl-accent-burn);
     color: var(--rvnwl-ivory);
   }
-  
+
+  .btn-card {
+      background: transparent;
+     color: var(--rvnwl-accent-burn);
+     font-weight: 500;
+     border: 2.5px solid var(--rvnwl-accent-burn);
+     border-radius: 0.5rem;
+     padding: 0.7rem 2rem;
+     font-size: 1.08rem;
+     box-shadow: 0 1.5px 8px 0 rgba(12,242,224,0.10);
+     transition: background .2s, color .2s;
+     cursor: pointer;
+   }
+   .btn-card:hover,
+   .btn-card:focus {
+     background: var(--rvnwl-accent-burn);
+     color: var(--rvnwl-ivory);
+   }
+
+
+  /* Ensures footer content is horizontally aligned like button */
+  .community-links-footer {
+    justify-content: flex-end;
+    margin-top: 1.25rem;
+  }
+
+  .community-links {
+    display: flex;
+    gap: 1.1rem;  /* Space between icons */
+  }
+
+  .community-icon {
+    color: var(--rvnwl-accent-burn);
+    transition: color 0.2s, transform 0.17s;
+    opacity: 0.98;
+  }
+
+  .community-icon.discord:hover {
+    color: #7289da;
+    transform: scale(1.15) rotate(-3deg);
+  }
+  .community-icon.telegram:hover {
+    color: #229ED9;
+    transform: scale(1.15) rotate(2deg);
+  }
+  .community-icon.github:hover {
+    color: #fc4422; /* accent burn */
+    transform: scale(1.15) rotate(-2deg);
+  }
+  .community-icon.gitbook:hover {
+    color: #38d39f;
+    transform: scale(1.13) rotate(2deg);
+  }
+  .info-card-footer.info-card-footer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  @media (max-width: 640px) {
+    .info-card-footer.info-card-footer-row {
+      flex-direction: column;
+      gap: 1rem;
+      justify-content: flex-start;
+      align-items: stretch;
+    }
+  }
+
   /* =============== Responsive: extra spacing for tap on mobile ============== */
   @media (max-width: 640px) {
     .info-card { margin-bottom: 1.3rem; }
@@ -626,13 +810,13 @@
 
 /* Card styling for dashboard (reuse .card for Bootstrap cards and custom) */
 .card, .dashboard-card {
-  background: var(--card-bg);
+  /*background: var(--card-bg);*/
   color: var(--card-text);
   border: 1.5px solid var(--card-border);
   border-radius: 0.8rem;
  /* box-shadow: 0 8px 34px 0 rgba(12,242,224,0.12), 0 1.5px 6px 0 rgba(255,92,30,0.08);*/
   padding: 2.2rem 1.8rem 1.2rem;
-  margin-bottom: 1.5rem;
+  /*margin-bottom: 1.5rem;*/
   min-height: 320px;
  /* transition: box-shadow .17s, border-color .18s, transform .13s;*/
 }
@@ -649,9 +833,9 @@
   font-weight: 800;
   font-size: 1.19rem;
   text-transform: uppercase;
-  border-bottom: 1px solid var(--rvnwl-accent-cyan);
-  padding-bottom: .8rem;
-  margin-bottom: 1.1rem;
+  /*border-bottom: 1px solid var(--rvnwl-accent-cyan);*/
+  padding-bottom: .2rem;
+  margin-bottom: .1rem;
   letter-spacing: 0.03em;
 }
 body[data-theme='light'] .card-header { background-color: var(--gray-100); color: var(--text-light); }
@@ -699,8 +883,17 @@ body[data-theme='dark'] .card-header  { background-color: var(--gray-800); color
   width: 100%;
   max-width: 1800px;
   margin: 0 auto 2.5rem auto;
+}
+.all-assets-card {
+  overflow-x: auto;
+  width: 100%;
+  max-width: 1800px;
+  margin: 0 auto 2.5rem auto;
   border-radius: 0.75rem;
+  background: var(--card-bg);
   box-shadow: 0 4px 20px rgba(12,242,224,0.05);
+  border: 1.5px solid var(--card-border);
+  border-radius: 1.2rem 19.2px;
 }
 .table {
   background-color: var(--card-bg);
@@ -719,7 +912,7 @@ body[data-theme='dark'] .table thead th {
   color: var(--card-text);
 }
 body[data-theme='dark'] .table tbody td {
-  background-color: var(--card-bg);
+  background-color:#272727;
   color: var(--card-text);
 }
 body[data-theme='dark'] .table tbody tr {
@@ -973,17 +1166,23 @@ body[data-theme='dark'] .revamp-modal {
 
 /* Loading/Processing Overlay Inside Modals */
 .processing-overlay {
-  position: absolute;
+  position: absolute;  /* Key: Only overlay the modal body */
   inset: 0;
-  background-color: rgba(20,24,32,0.44);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  z-index: 1250;
+  background: rgba(18,23,32, 0.92); /* Subtle dark, nearly opaque for modals */
+  border-radius: 16px; /* Match your modal/dialog border radius */
+  z-index: 10; /* Sits on top of modal content, but inside the modal */
+  pointer-events: all;
 }
+
 .processing-text {
-  margin-top: .5rem;
-  color: var(--card-text);
+  margin-top: 1rem;
+  color: var(--rvnwl-accent-cyan, #9beffc);
+  font-weight: 600;
+  font-size: 1.12em;
 }
 
 /* T&C modal always above other modals */
@@ -1115,7 +1314,7 @@ body:not(.dark) .btn-outline-light.refresh-btn:focus {
 /* Card styling remains as before */
 .price-history-card {
   width: 100%;
-  max-width: 1880px;
+  max-width: 1800px;
   min-width: 0;
   margin: 0 auto;
 }
@@ -1140,6 +1339,44 @@ body:not(.dark) .btn-outline-light.refresh-btn:focus {
     margin: 0;
   }
 }
+/* Polished Table & Card */
+.dashboard-card.parallax-table {
+  background: linear-gradient(134deg, #161a22 0%, #232834 100%);
+  border-radius: 1.18rem;
+  box-shadow: 0 4px 20px rgba(12,242,224,0.07);
+  border: 1.5px solid var(--rvnwl-gray2);
+  padding: 2.4rem 2rem 2.2rem 2rem;
+  margin-bottom: 2.6rem;
+}
+.revamp-table {
+  background: transparent;
+  font-size: 1.07rem;
+}
+.revamp-table th, .revamp-table thead th {
+  font-weight: 500 !important;
+  color: var(--rvnwl-ivory) !important;
+  letter-spacing: 0.02em;
+  background: none;
+  border-bottom: 1.5px solid var(--rvnwl-gray2) !important;
+  text-transform: none;
+}
+.revamp-table td {
+  font-weight: 500;
+  border-top: 1px solid var(--rvnwl-gray2) !important;
+  vertical-align: middle;
+}
+.revamp-table a, .revamp-table span {
+  font-family: 'Inter', Arial, sans-serif;
+  font-size: 1.07rem;
+}
+.revamp-table tr:hover td {
+  background: #171c23;
+  transition: background 0.18s;
+}
+@media (max-width: 1050px) {
+  .dashboard-card.parallax-table { padding: 1.3rem 0.7rem 1.3rem 0.7rem; }
+  .table-responsive { padding: 0.7rem 0.2rem; }
+}
 
 /* Further reduce padding and height for very small screens */
 @media (max-width: 600px) {
@@ -1148,3 +1385,242 @@ body:not(.dark) .btn-outline-light.refresh-btn:focus {
     min-height: 180px;
   }
 }
+
+/* ======================================================================
+   HARTBEAT PULSE LINE
+   ====================================================================== */
+
+   .pulse-container {
+    position: relative;
+    width: min(420px, 80vw);   /* Scales down on mobile */
+    height: 90px;
+    margin: 16px auto 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: width 0.25s, height 0.25s;
+  }
+  
+  .pulse, .pulse-follow {
+    width: 4px;
+    height: 6px;
+    position: absolute;
+    top: 45px; /* baseline for y=0 */
+    left: 0;
+    border-radius: 3px;
+    box-shadow: 0 0 6px 0 var(--rvnwl-accent-burn, #fc4422);
+    background: var(--rvnwl-accent-burn, #fc4422);
+  }
+  
+  .pulse {
+    z-index: 3;
+    animation: pulse-move 7s linear infinite;
+  }
+  
+  .pulse-follow {
+    z-index: 2;
+    opacity: 0.22;
+    animation: pulse-move 7s linear infinite;
+  }
+  
+  @media (max-width: 600px) {
+    .pulse-container {
+      width: 96vw;
+      height: 54px;
+    }
+    .pulse, .pulse-follow {
+      width: 3px;
+      height: 4px;
+      top: 24px;
+    }
+  }
+  
+  @keyframes pulse-move {
+    0%   { transform: translate(0, 0); }
+    8%   { transform: translate(38px, 0); }
+    12%  { transform: translate(46px, 16px);}
+    14%  { transform: translate(54px, -37px);}
+    17%  { transform: translate(62px, 28px);}
+    19%  { transform: translate(70px, -16px);}
+    20%  { transform: translate(76px, 0);}
+    22%  { transform: translate(114px, 0);}
+    25%  { transform: translate(122px, 15px);}
+    27%  { transform: translate(130px, -27px);}
+    29%  { transform: translate(138px, 29px);}
+    32%  { transform: translate(146px, -16px);}
+    33%  { transform: translate(152px, 0);}
+    52%  { transform: translate(194px, 0);}
+    54%  { transform: translate(202px, 24px);}
+    56%  { transform: translate(210px, -36px);}
+    58%  { transform: translate(218px, 31px);}
+    60%  { transform: translate(226px, -19px);}
+    62%  { transform: translate(234px, 0);}
+    66%  { transform: translate(270px, 0);}
+    68%  { transform: translate(278px, 14px);}
+    70%  { transform: translate(286px, -25px);}
+    72%  { transform: translate(294px, 24px);}
+    74%  { transform: translate(302px, -12px);}
+    76%  { transform: translate(308px, 0);}
+    100% { transform: translate(370px, 0);}
+  }
+  
+
+  .dropdown-skeleton {
+    height: 38px;
+    width: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #c1f5f3 25%, #e0e0e0 50%, #c1f5f3 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.4s ease-in-out infinite;
+  }
+  @keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+/* ===================== RVNWL TABLES: THEME-AWARE, UNIFIED, RESPONSIVE ===================== */
+
+/* ===== BASE TABLE BACKGROUNDS: Full Coverage ===== */
+body[data-theme='dark'] .table,
+body[data-theme='dark'] .table-responsive,
+body[data-theme='dark'] .all-assets-card,
+body[data-theme='dark'] .revamp-table {
+  background: var(--card-bg-dark) !important;
+}
+
+body[data-theme='light'] .table,
+body[data-theme='light'] .table-responsive,
+body[data-theme='light'] .all-assets-card,
+body[data-theme='light'] .revamp-table {
+  background: var(--card-bg-light) !important;
+}
+
+/* ===== TABLE CELL COLORS ===== */
+body[data-theme='dark'] .table th,
+body[data-theme='dark'] .table td,
+body[data-theme='dark'] .revamp-table th,
+body[data-theme='dark'] .revamp-table td {
+  background: var(--card-bg-dark) !important;
+  color: var(--card-text-dark) !important;
+}
+
+body[data-theme='light'] .table th,
+body[data-theme='light'] .table td,
+body[data-theme='light'] .revamp-table th,
+body[data-theme='light'] .revamp-table td {
+  background: var(--card-bg-light) !important;
+  color: var(--text-light) !important;
+}
+
+/* ===== HOVER STATES ===== */
+body[data-theme='dark'] .table-hover > tbody > tr:hover > td,
+body[data-theme='dark'] .revamp-table tr:hover > td {
+  background: #171c23 !important;
+}
+body[data-theme='light'] .table-hover > tbody > tr:hover > td,
+body[data-theme='light'] .revamp-table tr:hover > td {
+  background: #f2f7fd !important;
+}
+
+/* ===== ACTIONS COLUMN: Unified (no borders, full-bg) ===== */
+.table td.actions-cell,
+.table th.actions-cell,
+.revamp-table td.actions-cell,
+.revamp-table th.actions-cell {
+  border-left: none !important;
+  border-right: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.table tr > td:last-child,
+.table tr > th:last-child,
+.revamp-table tr > td:last-child,
+.revamp-table tr > th:last-child {
+  border-right: none !important;
+}
+
+/* Patch: Remove left border if present in action cell */
+.table td.actions-cell,
+.revamp-table td.actions-cell {
+  border-left: none !important;
+  padding-top: 0.33rem;
+  padding-bottom: 0.33rem;
+  padding-left: 0.2rem;
+  padding-right: 0.2rem;
+}
+
+/* Make actions-cell always look full, never see-through, even on scroll */
+body[data-theme='dark'] .table td.actions-cell,
+body[data-theme='dark'] .revamp-table td.actions-cell {
+  background: var(--card-bg-dark) !important;
+}
+body[data-theme='light'] .table td.actions-cell,
+body[data-theme='light'] .revamp-table td.actions-cell {
+  background: var(--card-bg-light) !important;
+}
+
+/* ===== Action Buttons Row ===== */
+.table .action-btns,
+.revamp-table .action-btns,
+.all-assets-action-btns {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.56rem;
+  background: none;
+  border: none;
+}
+
+/* Mobile: Tighten up actions column on small screens */
+@media (max-width: 700px) {
+  .table td.actions-cell,
+  .revamp-table td.actions-cell {
+    min-width: 90px;
+    padding-left: 0.05rem;
+    padding-right: 0.05rem;
+  }
+}
+
+/* Patch: When horizontal scrolling, last cell always filled */
+body[data-theme='dark'] .table td:last-child,
+body[data-theme='dark'] .revamp-table td:last-child {
+  background: var(--card-bg-dark) !important;
+}
+body[data-theme='light'] .table td:last-child,
+body[data-theme='light'] .revamp-table td:last-child {
+  background: var(--card-bg-light) !important;
+}
+
+/* Extra: Remove double borders for all columns */
+.table th,
+.table td,
+.revamp-table th,
+.revamp-table td {
+  border-color: var(--card-border) !important;
+}
+
+/* Optional: Stripe alternate rows in light/dark mode for clarity */
+body[data-theme='light'] .table-striped > tbody > tr:nth-of-type(odd) {
+  background: #f7fafd !important;
+}
+body[data-theme='dark'] .table-striped > tbody > tr:nth-of-type(odd) {
+  background: #22262e !important;
+}
+
+/* Optional: Table header always bold, solid bg */
+.table th, .revamp-table th {
+  font-weight: 600;
+  background: var(--card-bg) !important;
+  color: var(--rvnwl-accent-cyan) !important;
+  letter-spacing: 0.02em;
+  border-bottom: 1.5px solid var(--rvnwl-gray2) !important;
+}
+
+/* Responsive: On very small screens, reduce table padding */
+@media (max-width: 600px) {
+  .table, .revamp-table { font-size: 0.98rem; }
+  .table th, .table td, .revamp-table th, .revamp-table td { padding: 0.41rem 0.16rem; }
+}
+

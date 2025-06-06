@@ -8,8 +8,8 @@ import {
   Contract, parseUnits, formatEther
 } from "ethers";
 import { DEFI_ADDRESSES } from "../constants";
-import FluviaABI  from "../abis/FluviaDeFi.json";
-import TandCModal from "./TandCModal";
+import RevampABI  from "../abis/RevampDeFi.json";
+import TClistModal from "./TClistAsset";
 
 export default function ListAssetModal({
   isOpen,
@@ -66,7 +66,7 @@ export default function ListAssetModal({
           return;
         }
 
-        const core = new Contract(addrDeployed, FluviaABI, provider);
+        const core = new Contract(addrDeployed, RevampABI, provider);
         setListingFee(await core.listingFee());
       } catch (err) {
         console.error("fetch fee", err);
@@ -91,7 +91,7 @@ export default function ListAssetModal({
         [{ chainId: "0x" + selectedNetwork.chainId.toString(16) }]);
 
       const signer = await provider.getSigner();
-      const core   = new Contract(addrDeployed, FluviaABI, signer);
+      const core   = new Contract(addrDeployed, RevampABI, signer);
 
       const tx = await core.listNewAsset(
         tokenAddress.trim(),
@@ -210,7 +210,9 @@ export default function ListAssetModal({
             >
               Fee:&nbsp;
               <span style={{ color: "var(--rvnwl-accent-burn)" }}>
-                {formatEther(listingFee)} {selectedNetwork.currency}
+                {listingFee
+                  ? Math.round(Number(formatEther(listingFee)))
+                  : "—"} {selectedNetwork.currency}
               </span>
             </div>
           )}
@@ -282,8 +284,8 @@ export default function ListAssetModal({
                     textDecoration: "underline"
                   }}
                 >
-                  terms
-                </Button>
+                  asset listing terms
+                </Button>.
               </Form.Label>
             </Form.Group>
           </Form>
@@ -366,7 +368,7 @@ export default function ListAssetModal({
   
       {/* ======= Terms & Conditions ======= */}
       {showTandC && (
-        <TandCModal
+        <TClistModal
           show
           onClose={() => setShowTandC(false)}
           onAgree={() => { setAgreeTerms(true); setShowTandC(false); }}

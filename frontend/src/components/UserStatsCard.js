@@ -14,7 +14,7 @@ import { Line } from "react-chartjs-2";
 import { Card, Button } from "react-bootstrap";
 
 import { DEFI_ADDRESSES } from "../constants";
-import FluviaABI from "../abis/FluviaDeFi.json";
+import RevampABI from "../abis/RevampDeFi.json";
 
 ChartJS.register(
   CategoryScale,
@@ -68,7 +68,7 @@ export default function UserStatsCard({
       const addr = DEFI_ADDRESSES[selectedNetwork.chainId];
       if (!addr) return;
 
-      const coreDefi = new Contract(addr, FluviaABI, provider);
+      const coreDefi = new Contract(addr, RevampABI, provider);
 
       const totalBn = await coreDefi.totalNativeContributed();
       const totalVal = parseFloat(formatEther(totalBn));
@@ -218,7 +218,7 @@ export default function UserStatsCard({
           style={{
             fontSize: "1.32rem",
             fontWeight: 600,
-            color: "var(--rvnwl-accent-cyan)",
+            color: "var(--rvnwl-accent-burn)",
             marginBottom: 0,
             letterSpacing: ".04em",
             textTransform: "uppercase"
@@ -230,7 +230,7 @@ export default function UserStatsCard({
           style={{
             height: 3,
             width: "100%",
-            background: "linear-gradient(90deg, var(--rvnwl-accent-cyan) 30%, transparent 100%)",
+            background: "linear-gradient(90deg, var(--rvnwl-accent-burn) 30%, transparent 100%)",
             margin: "10px 0 0 0",
             borderRadius: 2
           }}
@@ -250,43 +250,45 @@ export default function UserStatsCard({
           <div style={{ minWidth: 210, flex: 1 }}>
             <div style={{
               fontSize: "1.06rem",
-              fontWeight: 700,
+              fontWeight: 600,
               color: "var(--rvnwl-accent-cyan)",
               textTransform: "uppercase",
               letterSpacing: ".02em"
             }}>
               {selectedNetwork?.label || ""}
             </div>
-            <div style={{ margin: "8px 0 0 0" }}>
-              <span style={{ color: "#abbfd5", fontWeight: 500 }}>Total Liquidity:</span>
+
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5, color: "#abbfd5", fontWeight: 400, margin: "8px 0 0 0" }}>
+              <span>Contributed:</span>
               <span style={{
-                color: "var(--card-text)", fontWeight: 600, fontSize: "1.13rem", marginLeft: 6
+                color: "var(--rvnwl-accent-burn)", fontWeight: 600, fontSize: "1.13rem", marginLeft: 6
               }}>{myContrib.toFixed(4)} {selectedNetwork?.currency}</span>
             </div>
-            <div>
-              <span style={{ color: "#abbfd5", fontWeight: 500 }}>Pending Income:</span>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5, color: "#abbfd5", fontWeight: 400 }}>
+              <span>Pending Income:</span>
               <span style={{
-                color: "#fb39a3", fontWeight: 700, fontSize: "1.10rem", marginLeft: 6
+                color: "#fb39a3", fontWeight: 600, fontSize: "1.13rem", marginLeft: 6
               }}>{pendingRevamp.toFixed(4)} {selectedNetwork?.currency}</span>
             </div>
           </div>
+
           <div style={{ minWidth: 210, flex: 1 }}>
-            <div>
-              <span style={{ color: "#abbfd5", fontWeight: 500 }}>Total Pool:</span>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5, color: "#abbfd5", fontWeight: 400 }}>
+              <span>Global Pool:</span>
               <span style={{
-                color: "var(--card-text)", fontWeight: 600, marginLeft: 6
+                color: "var(--rvnwl-accent-cyan)", fontWeight: 600, fontSize: "1.13rem", marginLeft: 6
               }}>{totalPool.toFixed(4)} {selectedNetwork?.currency}</span>
             </div>
-            <div>
-              <span style={{ color: "#abbfd5", fontWeight: 500 }}>Revamp Output:</span>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5, color: "#abbfd5", fontWeight: 400 }}>
+              <span>Revamp Output:</span>
               <span style={{
-                color: "#3bf6b1", fontWeight: 600, fontSize: "1.10rem", marginLeft: 6
+                color: "#3bf6b1", fontWeight: 600, fontSize: "1.13rem", marginLeft: 6
               }}>{maxPotential.toFixed(4)} {selectedNetwork?.currency}</span>
             </div>
-            <div>
-              <span style={{ color: "#abbfd5", fontWeight: 500 }}>Potential Left:</span>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5, color: "#abbfd5", fontWeight: 400 }}>
+              <span>Expecting:</span>
               <span style={{
-                color: "#31c9ff", fontWeight: 600, fontSize: "1.10rem", marginLeft: 6
+                color: "#31c9ff", fontWeight: 600, fontSize: "1.13rem", marginLeft: 6
               }}>{capLeft.toFixed(4)} {selectedNetwork?.currency}</span>
             </div>
           </div>
@@ -346,7 +348,7 @@ export default function UserStatsCard({
             border: "none"
           }}
         >
-          Claim / Reinvest
+          Claim / Rejoin
         </Button>
           <Button
             variant="success"
@@ -354,7 +356,7 @@ export default function UserStatsCard({
             className="action-btn"
             style={{ background: "#28e6ad", border: "none" }}
           >
-            Revamp
+            Join Revamp
           </Button>
           <Button
             variant="warning"

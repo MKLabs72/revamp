@@ -78,11 +78,11 @@ export default function NavbarComp({ theme, toggleTheme }) {
             lineHeight: 1,
             userSelect: 'none'
           }}
-          onClick={() => setExpanded(false)}
+          onClick={() => window.location.reload()}
         >
           <RVNWLLogo
             style={{
-              height: "40px",
+              height: "32px",
               width: "auto",
               display: "block",
               marginRight: "0.15em"

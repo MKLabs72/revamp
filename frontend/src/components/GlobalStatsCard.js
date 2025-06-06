@@ -3,7 +3,7 @@ import { JsonRpcProvider, Contract, formatEther } from "ethers";
 import { Pie } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { DEFI_ADDRESSES } from "../constants";
-import FluviaABI from "../abis/FluviaDeFi.json";
+import RevampABI from "../abis/RevampDeFi.json";
 import { Card, Alert } from "react-bootstrap";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -21,7 +21,7 @@ export default function GlobalStatsCard({ selectedNetwork }) {
         const provider = new JsonRpcProvider(selectedNetwork.rpcUrl);
         const addr = DEFI_ADDRESSES[selectedNetwork.chainId];
         if (!addr) return;
-        const coreDefi = new Contract(addr, FluviaABI, provider);
+        const coreDefi = new Contract(addr, RevampABI, provider);
 
         const totalBn = await coreDefi.totalNativeContributed();
         setTotalContrib(parseFloat(formatEther(totalBn)));
@@ -100,7 +100,7 @@ export default function GlobalStatsCard({ selectedNetwork }) {
           style={{
             fontSize: "1.32rem",
             fontWeight: 600,
-            color: "var(--rvnwl-accent-cyan)",
+            color: "var(--rvnwl-accent-burn)",
             marginBottom: 0,
             letterSpacing: ".04em",
             textTransform: "uppercase"
@@ -112,7 +112,7 @@ export default function GlobalStatsCard({ selectedNetwork }) {
           style={{
             height: 3,
             width: "100%",
-            background: "linear-gradient(90deg, var(--rvnwl-accent-cyan) 30%, transparent 100%)",
+            background: "linear-gradient(90deg, var(--rvnwl-accent-burn) 30%, transparent 100%)",
             margin: "10px 0 0 0",
             borderRadius: 2
           }}
@@ -125,48 +125,24 @@ export default function GlobalStatsCard({ selectedNetwork }) {
           flexDirection: "column",
           gap: "0.6rem"
         }}>
-          <div style={{
-            fontSize: "1.16rem",
-            fontWeight: 500,
-            color: "var(--rvnwl-accent-cyan)",
-            letterSpacing: ".02em"
-          }}>
-            Network:{" "}
-            <span style={{ color: "var(--card-text)", fontWeight: 600 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7, letterSpacing: ".02em" }}>
+              <span style={{ fontWeight: 400, color: "#abbfd5" }}>Network:</span>
+              <span style={{ fontWeight: 600, color: "var(--rvnwl-accent-cyan)", fontSize: "1.18rem" }}>
               {selectedNetwork?.label ?? "–"}
-            </span>
-          </div>
-          <div>
-            <span style={{
-              color: "#abbfd5",
-              fontWeight: 500,
-              marginRight: 6
-            }}>
-              Total Liquidity:
-            </span>
-            <span style={{
-              color: "var(--card-text)",
-              fontWeight: 600,
-              fontSize: "1.18rem"
-            }}>
+              </span>
+            </div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+              <span style={{ fontWeight: 400, color: "#abbfd5" }}>Total Liquidity:</span>
+              <span style={{ fontWeight: 600, color: "var(--rvnwl-accent-burn)", fontSize: "1.18rem" }}>
               {totalContrib.toFixed(4)} {selectedNetwork?.currency}
-            </span>
-          </div>
-          <div>
-            <span style={{
-              color: "#abbfd5",
-              fontWeight: 500,
-              marginRight: 6
-            }}>
-              Listing Fees:
-            </span>
-            <span style={{
-              color: "var(--card-text)",
-              fontWeight: 700
-            }}>
+              </span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+              <span style={{ fontWeight: 400, color: "#abbfd5" }}>Listing Fees:</span>
+              <span style={{ fontWeight: 600, color: "#f7ba7a", fontSize: "1rem" }}>
               {totalFees.toFixed(4)} {selectedNetwork?.currency}
-            </span>
-          </div>
+              </span>
+            </div>
         </div>
         {topAddresses.length === 0 && (
           <Alert variant="secondary" className="mt-2 mb-0">

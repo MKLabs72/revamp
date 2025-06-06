@@ -1,90 +1,77 @@
+// AllAssetsTable.js
+
 import React, { useState, useMemo, useEffect } from "react";
 import { FaCopy, FaTrash, FaInfoCircle } from "react-icons/fa";
 import { BrowserProvider, Contract, formatUnits } from "ethers";
 import { DEFI_ADDRESSES } from "../constants";
-import FluviaABI from "../abis/FluviaDeFi.json";
+import RevampABI from "../abis/RevampDeFi.json";
 import { Table, Button, Spinner, Modal, Form } from "react-bootstrap";
-import TandCModal from "./TandCModal";
+import TCdelistModal from "./TCdelistAsset";
 
-export default function AllAssetsTable({ listedAssets, selectedNetwork, userBalances, currentAccount }) {
+export default function AllAssetsTable({
+  listedAssets,
+  selectedNetwork,
+  userBalances,
+  currentAccount,
+  onDelete,
+}) {
   const [sortConfig, setSortConfig] = useState({ key: "rate", direction: "desc" });
   const [accumulatedBalances, setAccumulatedBalances] = useState({});
-  const [standardDelistFee, setStandardDelistFee] = useState(null);
-  const [outsiderDelistFee, setOutsiderDelistFee] = useState(null);
+  const [delistFee, setDelistFee] = useState(null);
   const [showDelistModal, setShowDelistModal] = useState(false);
   const [assetToDelist, setAssetToDelist] = useState(null);
-  const [delistFee, setDelistFee] = useState(null);
   const [isDelistLoading, setIsDelistLoading] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [assetForInfo, setAssetForInfo] = useState(null);
   const [totalSupply, setTotalSupply] = useState(null);
-  const [agreeTerms,   setAgreeTerms]   = useState(false);
-  const [showTandC,    setShowTandC]    = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [showTandC, setShowTandC] = useState(false);
+  const [txHash, setTxHash] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  const filteredAssets = useMemo(() => {
+  const filtered = useMemo(() => {
     if (!selectedNetwork) return [];
-    return listedAssets.filter(asset => asset.networkName === selectedNetwork.label);
+    return listedAssets
+      .filter(a => a.networkName === selectedNetwork.label)
+      .filter(a => parseFloat(a.rate) > 0);
   }, [listedAssets, selectedNetwork]);
 
+  const uniqueAssets = useMemo(() => {
+    const m = new Map();
+    for (const a of filtered) m.set(a.tokenAddress, a);
+    return Array.from(m.values());
+  }, [filtered]);
+
   const sortedAssets = useMemo(() => {
-    const items = [...filteredAssets];
-    if (sortConfig) {
-      items.sort((a, b) => {
-        let aValue, bValue;
-        switch (sortConfig.key) {
-          case "name":
-            aValue = a.tokenName.toLowerCase();
-            bValue = b.tokenName.toLowerCase();
-            break;
-          case "symbol":
-            aValue = a.tokenSymbol.toLowerCase();
-            bValue = b.tokenSymbol.toLowerCase();
-            break;
-          case "decimals":
-            aValue = a.decimals;
-            bValue = b.decimals;
-            break;
-          case "rate":
-            aValue = parseFloat(a.rate);
-            bValue = parseFloat(b.rate);
-            break;
-          case "accumulated":
-            aValue = accumulatedBalances[a.tokenAddress] || 0;
-            bValue = accumulatedBalances[b.tokenAddress] || 0;
-            break;
-          default:
-            aValue = a.tokenName.toLowerCase();
-            bValue = b.tokenName.toLowerCase();
-        }
-        if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
-        return 0;
-      });
-    }
+    const items = [...uniqueAssets];
+    items.sort((a, b) => {
+      let aV, bV;
+      switch (sortConfig.key) {
+        case "name": aV = a.tokenName.toLowerCase(); bV = b.tokenName.toLowerCase(); break;
+        case "symbol": aV = a.tokenSymbol.toLowerCase(); bV = b.tokenSymbol.toLowerCase(); break;
+        case "decimals": aV = a.decimals; bV = b.decimals; break;
+        case "rate": aV = parseFloat(a.rate); bV = parseFloat(b.rate); break;
+        case "accumulated": aV = parseFloat(accumulatedBalances[a.tokenAddress] || 0);
+                          bV = parseFloat(accumulatedBalances[b.tokenAddress] || 0); break;
+        default: aV = a.tokenName.toLowerCase(); bV = b.tokenName.toLowerCase();
+      }
+      return sortConfig.direction === "asc" ? aV - bV : bV - aV;
+    });
     return items;
-  }, [filteredAssets, sortConfig, accumulatedBalances]);
+  }, [uniqueAssets, sortConfig, accumulatedBalances]);
 
   const requestSort = (key) => {
     let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") {
-      direction = "desc";
-    }
+    if (sortConfig.key === key && sortConfig.direction === "asc") direction = "desc";
     setSortConfig({ key, direction });
   };
 
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text).then(() => {
-      alert("Contract address copied to clipboard!");
-    });
-  };
+  const copyToClipboard = (text) => navigator.clipboard.writeText(text).then(() => alert("Address copied!"));
 
-  const getExplorerLinkForAsset = (asset) =>
-    selectedNetwork
-      ? `${selectedNetwork.explorerUrl}/address/${asset.tokenAddress}`
-      : "#";
+  const getExplorerLinkForAsset = (asset) => selectedNetwork ? `${selectedNetwork.explorerUrl}/address/${asset.tokenAddress}` : "#";
 
   useEffect(() => {
-    async function fetchAccumulatedBalances() {
+    async function fetchBalances() {
       if (!selectedNetwork || !window.ethereum) return;
       const provider = new BrowserProvider(window.ethereum);
       const accumulationAddress = DEFI_ADDRESSES[selectedNetwork.chainId];
@@ -95,10 +82,7 @@ export default function AllAssetsTable({ listedAssets, selectedNetwork, userBala
           try {
             const tokenContract = new Contract(
               asset.tokenAddress,
-              [
-                "function balanceOf(address account) view returns (uint256)",
-                "function decimals() view returns (uint8)"
-              ],
+              ["function balanceOf(address) view returns (uint256)", "function decimals() view returns (uint8)"],
               provider
             );
             const [balance, decimals] = await Promise.all([
@@ -107,46 +91,34 @@ export default function AllAssetsTable({ listedAssets, selectedNetwork, userBala
             ]);
             newBalances[asset.tokenAddress] = parseFloat(formatUnits(balance, decimals)).toFixed(4);
           } catch (e) {
-            console.error(`Error fetching balance for token ${asset.tokenAddress}:`, e);
+            console.error(e);
             newBalances[asset.tokenAddress] = "0.0000";
           }
         })
       );
       setAccumulatedBalances(newBalances);
     }
-    fetchAccumulatedBalances();
+    fetchBalances();
   }, [sortedAssets, selectedNetwork]);
 
   useEffect(() => {
-    async function fetchDelistFees() {
+    async function fetchDelistFee() {
       if (!selectedNetwork || !window.ethereum) return;
       try {
         const provider = new BrowserProvider(window.ethereum);
         const contractAddr = DEFI_ADDRESSES[selectedNetwork.chainId];
-        if (!contractAddr) return;
-        const coreDefiContract = new Contract(contractAddr, FluviaABI, provider);
-        const stdFee = await coreDefiContract.standardDelistFee();
-        const outFee = await coreDefiContract.outsiderDelistFee();
-        setStandardDelistFee(stdFee);
-        setOutsiderDelistFee(outFee);
-      } catch (err) {
-        console.error("Error fetching delist fees:", err);
+        const contract = new Contract(contractAddr, RevampABI, provider);
+        const fee = await contract.delistFee();
+        setDelistFee(fee);
+      } catch (e) {
+        console.error(e);
       }
     }
-    fetchDelistFees();
-  }, [selectedNetwork]);
+    fetchDelistFee();
+  }, [selectedNetwork]);    
 
   const handleOpenDelistModal = (asset) => {
     setAssetToDelist(asset);
-    if (
-      currentAccount &&
-      asset.lister &&
-      currentAccount.toLowerCase() === asset.lister.toLowerCase()
-    ) {
-      setDelistFee(standardDelistFee);
-    } else {
-      setDelistFee(outsiderDelistFee);
-    }
     setShowDelistModal(true);
   };
 
@@ -163,21 +135,24 @@ export default function AllAssetsTable({ listedAssets, selectedNetwork, userBala
       const provider = new BrowserProvider(window.ethereum);
       const chainHex = "0x" + selectedNetwork.chainId.toString(16);
       await provider.send("wallet_switchEthereumChain", [{ chainId: chainHex }]);
-      
+  
       const signer = await provider.getSigner();
       const contractAddr = DEFI_ADDRESSES[selectedNetwork.chainId];
-      const coreDefi = new Contract(contractAddr, FluviaABI, signer);
-      
+      const coreDefi = new Contract(contractAddr, RevampABI, signer);
+  
       const tx = await coreDefi.delistAsset(assetToDelist.tokenAddress, { value: delistFee });
       await tx.wait();
-      alert("Asset delisted successfully!");
+  
+      setTxHash(tx.hash);
+      setShowSuccessModal(true);
       handleCloseDelistModal();
+      if (onDelete) onDelete();
     } catch (err) {
       console.error("Delist failed:", err);
       alert("Delist failed. See console for details.");
     }
     setIsDelistLoading(false);
-  };
+  };  
 
   const handleOpenInfoModal = async (asset) => {
     setAssetForInfo(asset);
@@ -217,26 +192,16 @@ export default function AllAssetsTable({ listedAssets, selectedNetwork, userBala
   }
 
   return (
-    <div
-      className="all-assets-card shadow glass-card"
-      style={{
-        border: "1.5px solid var(--card-border)",
-        borderRadius: "1.2rem",
-        background: "var(--card-bg)",
-        color: "var(--card-text)",
-        marginBottom: "2.2rem"
-      }}
-    >
-      {/* HEADER */}
+    <div className="all-assets-card">
       <div
         className="d-flex align-items-center px-4 pt-4 pb-3"
-        style={{ borderBottom: "none" }}
+        style={{ borderBottom: "none", gap: 12 }}
       >
         <h2
           style={{
             fontSize: "1.22rem",
             fontWeight: 600,
-            color: "var(--rvnwl-accent-cyan)",
+            color: "var(--rvnwl-accent-burn)",
             marginBottom: 0,
             letterSpacing: ".04em",
             textTransform: "uppercase"
@@ -244,181 +209,84 @@ export default function AllAssetsTable({ listedAssets, selectedNetwork, userBala
         >
           Listed Assets
         </h2>
+        {selectedNetwork?.label && (
+          <span
+            style={{
+              fontSize: "1.01rem",
+              fontWeight: 500,
+              color: "#63a4fa",
+              marginLeft: 10,
+              letterSpacing: ".02em",
+              textTransform: "capitalize"
+            }}
+          >
+            — {selectedNetwork.label} network
+          </span>
+        )}
       </div>
       <div
         style={{
           height: 3,
           width: "98%",
           background:
-            "linear-gradient(90deg, var(--rvnwl-accent-cyan) 30%, transparent 100%)",
+            "linear-gradient(90deg, var(--rvnwl-accent-burn) 30%, transparent 100%)",
           margin: "0 auto 1.1rem auto",
           borderRadius: 2
         }}
       />
-
-      {/* TABLE */}
-      <div className="table-responsive px-4 pb-4">
-        <Table
-          bordered
-          hover
-          striped
-          className="text-center mb-0"
-          style={{
-            background: "var(--card-bg)",
-            color: "var(--card-text)",
-            borderRadius: "0.9rem",
-            overflow: "hidden",
-            boxShadow: "none"
-          }}
-        >
-          <thead>
+      <Table
+        bordered
+        hover
+        responsive
+        className="text-center mx-3 mb-0 revamp-table"
+      >
+        <thead>
+          <tr>
+            <th>Logo</th>
+            <th className="text-start pe-4" onClick={() => requestSort("name")}>Name</th>
+            <th className="text-start pe-4" onClick={() => requestSort("symbol")}>Symbol</th>
+            <th className="text-center pe-4" onClick={() => requestSort("decimals")}>Decimals</th>
+            <th className="text-end pe-4" onClick={() => requestSort("rate")}>
+              Rate {selectedNetwork?.currency ? `(${selectedNetwork.currency})` : ""}
+            </th>
+            <th className="text-end pe-4" onClick={() => requestSort("accumulated")}>Accumulated</th>
+            <th className="actions-cell">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sortedAssets.length === 0 ? (
             <tr>
-              <th style={{ width: 54 }}>Logo</th>
-              <th
-                onClick={() => requestSort("name")}
-                style={{
-                  cursor: "pointer",
-                  color:
-                    sortConfig.key === "name"
-                      ? "var(--rvnwl-accent-cyan)"
-                      : "var(--card-text)"
-                }}
-              >
-                Name
-              </th>
-              <th
-                onClick={() => requestSort("symbol")}
-                style={{
-                  cursor: "pointer",
-                  color:
-                    sortConfig.key === "symbol"
-                      ? "var(--rvnwl-accent-cyan)"
-                      : "var(--card-text)"
-                }}
-              >
-                Symbol
-              </th>
-              <th
-                onClick={() => requestSort("decimals")}
-                style={{
-                  cursor: "pointer",
-                  color:
-                    sortConfig.key === "decimals"
-                      ? "var(--rvnwl-accent-cyan)"
-                      : "var(--card-text)"
-                }}
-              >
-                Decimals
-              </th>
-              <th
-                onClick={() => requestSort("rate")}
-                style={{
-                  cursor: "pointer",
-                  color:
-                    sortConfig.key === "rate"
-                      ? "var(--rvnwl-accent-cyan)"
-                      : "var(--card-text)"
-                }}
-              >
-                Rate
-              </th>
-              <th
-                onClick={() => requestSort("accumulated")}
-                style={{
-                  cursor: "pointer",
-                  color:
-                    sortConfig.key === "accumulated"
-                      ? "var(--rvnwl-accent-cyan)"
-                      : "var(--card-text)"
-                }}
-              >
-                Accumulated
-              </th>
-              <th style={{ width: 120 }}>Actions</th>
+              <td colSpan={7} className="py-3 text-muted">
+                No assets listed
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {sortedAssets.length === 0 ? (
-              <tr>
-                <td colSpan="7" className="py-3 text-muted">
-                  No assets listed
+          ) : (
+            sortedAssets.map(asset => (
+              <tr key={asset.tokenAddress}>
+                <td>
+                  <img
+                    src={asset.logoUrl || "https://images.rvnwl.com/assets-placeholder.svg"}
+                    alt={asset.tokenSymbol}
+                    style={{ width: 30, height: 30, borderRadius: "50%" }}
+                  />
                 </td>
-              </tr>
-            ) : (
-              sortedAssets.map((asset) => (
-                <tr key={asset.tokenAddress}>
-                  {/* Logo */}
-                  <td>
-                    {asset.logoUrl ? (
-                      <a
-                        href={getExplorerLinkForAsset(asset)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <img
-                          src={asset.logoUrl}
-                          alt={`${asset.tokenSymbol} logo`}
-                          style={{
-                            height: "30px",
-                            width: "30px",
-                            borderRadius: "50%",
-                            border: "2.5px solid var(--card-border)",
-                            boxShadow: "0 1px 6px 0 rgba(0,0,0,0.15)"
-                          }}
-                        />
-                      </a>
-                    ) : (
-                      <span className="small text-muted">No Logo</span>
-                    )}
-                  </td>
-                  {/* Name */}
-                  <td>
-                    <a
-                      href={getExplorerLinkForAsset(asset)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="fw-normal"
-                      style={{
-                        color: "var(--rvnwl-accent-cyan)",
-                        textDecoration: "underline"
-                      }}
-                    >
-                      {asset.tokenName}
-                    </a>
-                  </td>
-                  {/* Symbol */}
-                  <td style={{ fontWeight: 500, color: "#8bd4fa" }}>
-                    {asset.tokenSymbol}
-                  </td>
-                  {/* Decimals */}
-                  <td style={{ color: "#abbfd5" }}>
-                    {typeof asset.decimals === "number" ? asset.decimals : "-"}
-                  </td>
-                  {/* Rate */}
-                  <td style={{ fontWeight: 400, color: "#3bf6b1" }}>
-                    {asset.rate}
-                  </td>
-                  {/* Accumulated */}
-                  <td>
-                    {accumulatedBalances[asset.tokenAddress] !== undefined ? (
-                      <a
-                        href={`${selectedNetwork.explorerUrl}/address/${DEFI_ADDRESSES[selectedNetwork.chainId]}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          color: "#fcac3d",
-                          fontWeight: 400,
-                          letterSpacing: 0.5
-                        }}
-                      >
-                        {accumulatedBalances[asset.tokenAddress]}
-                      </a>
-                    ) : (
-                      "-"
-                    )}
-                  </td>
-                  {/* Actions */}
-                  <td className="d-flex justify-content-center align-items-center gap-2">
+                <td className="text-start pe-4">
+                  <a
+                    href={getExplorerLinkForAsset(asset)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {asset.tokenName}
+                  </a>
+                </td>
+                <td className="text-start pe-4">{asset.tokenSymbol}</td>
+                <td className="text-center pe-4">{asset.decimals}</td>
+                <td className="text-end pe-4">{asset.rate}</td>
+                <td className="text-end pe-4">
+                  {accumulatedBalances[asset.tokenAddress] || "0.0000"}
+                </td>
+                <td className="actions-cell">
+                  <div className="action-btns">
                     <Button
                       variant="outline-light"
                       title="Copy Contract Address"
@@ -446,14 +314,13 @@ export default function AllAssetsTable({ listedAssets, selectedNetwork, userBala
                     >
                       <FaTrash size={17} />
                     </Button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </Table>
-      </div>
-
+                  </div>
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </Table>
       {/* Delist Modal */}
       {showDelistModal && assetToDelist && (
        <Modal
@@ -522,29 +389,27 @@ export default function AllAssetsTable({ listedAssets, selectedNetwork, userBala
            </div>
      
            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
-             <span style={{
-               fontWeight: 500,
-               color: "#ffc107",
-               fontSize: "1.11rem",
-               textShadow: "0 1px 8px #442"
-             }}>
-               {currentAccount?.toLowerCase() === assetToDelist.lister?.toLowerCase()
-                 ? "Standard delist fee:"
-                 : "Outsider delist fee:"}
-             </span>
-             <span style={{
-               background: "#ff5067",
-               color: "#fff",
-               fontWeight: 600,
-               borderRadius: "0.55rem",
-               padding: "0.22rem 0.88rem",
-               fontSize: "1.04rem",
-               marginLeft: 2,
-               display: "inline-block",
-               letterSpacing: "0.01em"
-             }}>
-               {delistFee ? parseFloat(formatUnits(delistFee, 18)).toFixed(4) : "0.0000"} {selectedNetwork.currency}
-             </span>
+           <span style={{
+              fontWeight: 500,
+              color: "#ffc107",
+              fontSize: "1.11rem",
+              textShadow: "0 1px 8px #442"
+            }}>
+              Delist fee:
+            </span>
+            <span style={{
+              background: "#ff5067",
+              color: "#fff",
+              fontWeight: 600,
+              borderRadius: "0.55rem",
+              padding: "0.22rem 0.88rem",
+              fontSize: "1.04rem",
+              marginLeft: 2,
+              display: "inline-block",
+              letterSpacing: "0.01em"
+            }}>
+              {delistFee ? parseFloat(formatUnits(delistFee, 18)).toFixed(0) : "0.0000"} {selectedNetwork.currency}
+            </span>
            </div>
      
            <div style={{ fontSize: "1.02rem" }}>
@@ -593,7 +458,7 @@ export default function AllAssetsTable({ listedAssets, selectedNetwork, userBala
            </Button>
          </Form.Group>
          {showTandC && (
-           <TandCModal
+           <TCdelistModal
              onClose={() => setShowTandC(false)}
              onAgree={() => {
                setAgreeTerms(true);
@@ -712,17 +577,11 @@ export default function AllAssetsTable({ listedAssets, selectedNetwork, userBala
                 </span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-                <span style={{ fontWeight: 700 }}>Listed At:</span>
-                <span>
-                  {assetForInfo.listedAt
-                    ? new Date(assetForInfo.listedAt * 1000).toLocaleString()
-                    : "Unknown"}
-                </span>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
                 <span style={{ fontWeight: 700 }}>Total Supply:</span>
                 <span style={{ color: "#fbc841" }}>
-                  {totalSupply ?? "Loading…"}
+                  {totalSupply !== undefined && totalSupply !== null
+                    ? Number(totalSupply).toLocaleString(undefined, { maximumFractionDigits: 0, minimumFractionDigits: 0 })
+                    : "Loading…"}
                 </span>
               </div>
             </div>
@@ -741,6 +600,49 @@ export default function AllAssetsTable({ listedAssets, selectedNetwork, userBala
                 fontSize: "1.07rem"
               }}
             >
+              Close
+            </Button>
+          </Modal.Footer>
+        </Modal>
+      )}
+      {/* Success Modal */}
+      {showSuccessModal && txHash && (
+        <Modal
+          show
+          onHide={() => setShowSuccessModal(false)}
+          centered
+          contentClassName="glass-card"
+          style={{ zIndex: 1250 }}
+        >
+          <Modal.Header closeButton>
+            <Modal.Title className="text-success fw-semibold">
+              Transaction Confirmed
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body className="text-center">
+            <div className="mb-3">
+              <span className="fw-normal" style={{ color: "var(--rvnwl-accent-cyan)", fontSize: "1.07rem" }}>
+                The asset has been successfully delisted.
+              </span>
+            </div>
+            <div>
+              <span className="small text-muted">Tx Hash:</span>
+              <br />
+              <a
+                href={`${selectedNetwork.explorerUrl}/tx/${txHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "var(--rvnwl-accent-cyan)", wordBreak: "break-all", fontSize: "0.98rem" }}
+              >
+                {txHash.slice(0, 12)}…{txHash.slice(-12)}
+              </a>
+            </div>
+          </Modal.Body>
+          <Modal.Footer>
+          <Button variant="success" onClick={() => {
+            setShowSuccessModal(false);
+            window.location.reload();
+          }}>
               Close
             </Button>
           </Modal.Footer>

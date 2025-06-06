@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { BrowserProvider, Contract, formatEther, parseUnits } from "ethers";
 import { DEFI_ADDRESSES } from "../constants";
-import FluviaABI from "../abis/FluviaDeFi.json";
+import RevampABI from "../abis/RevampDeFi.json";
 import { Button, Modal, Spinner, Form } from "react-bootstrap";
 
 const MINIMAL_ERC20_ABI = [
@@ -67,7 +67,7 @@ export default function ClaimReinvestModal({
       try {
         const provider = new BrowserProvider(window.ethereum);
         const contractAddr = DEFI_ADDRESSES[selectedNetwork.chainId];
-        const coreDefi = new Contract(contractAddr, FluviaABI, provider);
+        const coreDefi = new Contract(contractAddr, RevampABI, provider);
         const pending = await coreDefi.pendingReward(account);
         setPendingRevamp(Number(formatEther(pending)));
         const fee = await coreDefi.claimFee();
@@ -121,7 +121,7 @@ export default function ClaimReinvestModal({
       const provider = new BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       const contractAddr = DEFI_ADDRESSES[selectedNetwork.chainId];
-      const coreDefi = new Contract(contractAddr, FluviaABI, signer);
+      const coreDefi = new Contract(contractAddr, RevampABI, signer);
       const tx = await coreDefi.claim();
       await tx.wait();
       setTransactionHash(tx.hash);
@@ -154,7 +154,7 @@ export default function ClaimReinvestModal({
         const approveTx = await tokenContract.approve(contractAddr, tokenBn);
         await approveTx.wait();
       }
-      const coreDefi = new Contract(contractAddr, FluviaABI, signer);
+      const coreDefi = new Contract(contractAddr, RevampABI, signer);
       const depositValue = parseUnits(pendingRevamp.toString(), 18);
       const tx = await coreDefi.deposit(selectedAsset.tokenAddress, tokenBn, { value: depositValue });
       await tx.wait();
@@ -208,7 +208,7 @@ export default function ClaimReinvestModal({
               marginBottom: 0,
               textTransform: "uppercase"
             }}>
-              Claim / Reinvest
+              Claim / Rejoin
             </h2>
             <div style={{
               height: 3,
@@ -238,7 +238,7 @@ export default function ClaimReinvestModal({
           <div className="mb-3 d-flex flex-wrap align-items-end" style={{ gap: 20 }}>
             <div>
               <div style={{ color: "var(--rvnwl-accent-cyan)", fontWeight: 600, fontSize: "1.12rem" }}>
-                Pending Revamp
+                Pending Income
               </div>
               <span style={{ fontWeight: 800, fontSize: "1.22rem", color: "var(--rvnwl-accent-burn)" }}>
                 {pendingRevamp.toFixed(4)}
@@ -277,7 +277,7 @@ export default function ClaimReinvestModal({
               onClick={toggleRevampAccordion}
               disabled={!agreeTerms || isLoading || pendingRevamp <= 0}
             >
-              {showRevampAccordion ? "Hide Reinvest Options" : "Reinvest Income"}
+              {showRevampAccordion ? "Hide Rejoin Options" : "Rejoin Revamp"}
             </Button>
           </div>
           {/* Reinvest Section */}
@@ -305,17 +305,17 @@ export default function ClaimReinvestModal({
                 </Form.Select>
                 {selectedAsset && (
                   <div className="mt-2" style={{ color: "#72ecb1", fontWeight: 700 }}>
-                    You will receive: {(pendingRevamp / parseFloat(selectedAsset.rate)).toFixed(4)} {selectedAsset.tokenSymbol}
+                    You will revamp: {(pendingRevamp / parseFloat(selectedAsset.rate)).toFixed(4)} {selectedAsset.tokenSymbol}
                   </div>
                 )}
                 <Button
                   variant="success"
                   className="mt-3 w-100"
-                  style={{ fontWeight: 800, fontSize: "1.08rem" }}
+                  style={{ fontWeight: 600, fontSize: "1.08rem" }}
                   onClick={handleRevamp}
                   disabled={!agreeTerms || isLoading || !selectedAsset}
                 >
-                  Confirm Reinvest
+                  Confirm Rejoin
                 </Button>
               </Form.Group>
             </div>
@@ -343,7 +343,7 @@ export default function ClaimReinvestModal({
                 style={{ color: "var(--rvnwl-accent-cyan)", textDecoration: "underline" }}
               >
                 terms
-              </Button>
+              </Button>.
             </Form.Label>
           </Form.Group>
         </Modal.Body>
@@ -401,24 +401,42 @@ export default function ClaimReinvestModal({
 
       {/* ==== Terms & Conditions Modal ==== */}
       <Modal show={showTerms} onHide={() => setShowTerms(false)} centered dialogClassName="revamp-modal-dialog tandc-modal" contentClassName="revamp-modal tandc-modal" backdropClassName="tandc-modal-backdrop">
-        <Modal.Header closeButton>
-          <Modal.Title>Terms & Conditions</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <ul className="small mb-0">
-            <li>Smart-contract interactions are irreversible once confirmed.</li>
-            <li>No guarantees are provided regarding token prices or liquidity.</li>
-            <li>This interface is <em>not</em> investment advice.</li>
+      <Modal.Header closeButton>
+        <Modal.Title>Terms &amp; Conditions</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        <p className="small mb-0">
+          By using the Claim / Rejoin Revamp functionality via this interface, you acknowledge and accept:
+          <ul className="small mb-0 mt-2">
             <li>
-              Full documentation:&nbsp;
-              <a href="https://docs.revya.io" target="_blank" rel="noopener noreferrer">docs.revya.io</a>
+              <strong>Claiming revamp income</strong> is final and will transfer the available accumulated native currency to your wallet, minus any applicable claim fee. All claim actions are irreversible.
             </li>
             <li>
-              Open-source code:&nbsp;
-              <a href="https://github.com/revya/protocol" target="_blank" rel="noopener noreferrer">GitHub repo</a>
+              <strong>Rejoining revamp</strong> involves contributing your pending native currency income and an additional amount of the selected illiquid (revamp) asset, as calculated by the listed revamp rate. This process creates a new revamp participation, and the contributed illiquid asset will be permanently removed (“burned”) from circulation.
+            </li>
+            <li>
+              All smart-contract transactions are final and irreversible once confirmed on the blockchain.
+            </li>
+            <li>
+              <strong>No guarantees are provided</strong> regarding token prices, liquidity, or timing of income accumulation. Revamp returns are not immediate and depend on protocol activity.
+            </li>
+            <li>
+              You are solely responsible for understanding the revamp protocol, relevant assets, and the network involved. Ensure you have thoroughly reviewed all documentation and implications before proceeding.
+            </li>
+            <li>
+              Do not participate using assets or funds in violation of applicable laws or third-party rights.
+            </li>
+            <li>
+              This user interface does not provide financial advice. For further details, see the source code:&nbsp;
+              <a href="https://github.com/MKLabs72/revamp" target="_blank" rel="noopener noreferrer">
+                GitHub repo.
+              </a>
             </li>
           </ul>
-        </Modal.Body>
+          <br />
+          <strong>Precautionary Notice:</strong> If you are uncertain, have doubts, or are not 100% sure about your participation, do not proceed. Only continue if you have conducted adequate research and fully understand the platform’s risks and mechanics.
+        </p>
+      </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowTerms(false)}>
             Close
