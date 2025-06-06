@@ -75,6 +75,7 @@ Visit http://localhost:3000 to interact with your local frontend.
 /contracts         # Solidity smart contracts
 
 /frontend          # React frontend (src/pages/components)
+
   └─ src/abis      # Contract ABIs
 
 /docs              # (Optional) Protocol and API docs
