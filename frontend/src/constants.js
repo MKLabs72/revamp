@@ -9,21 +9,21 @@ import baseIcon     from "./assets/base.png";
 
 
 export const DEFI_ADDRESSES = {
-  56: "0x0ad80f518e630d066399271185e8dee61a966d87",    // BSC Mainnet
-  137: "0xe7C68EC46EF391D6573087B0EA0aA48122A0438E",  // Polygon Mainnet
-  1: "0x8e9b857abb19637fbc9db7d3d2fcced36368ca4b",     // Ethereum Mainnet
-  8453: "0xba147e6aa96C5BD534f0D8237210a9065666eCcB",   // Base Mainnet
-  42161: "0x8e9b857abb19637fbc9db7d3d2fcced36368ca4b",  // Arbitrum One
-  10: "0x8e9b857abb19637fbc9db7d3d2fcced36368ca4b"      // Optimism Mainnet
+  56: "0xRevampContractAddressForBSC",    // BSC Mainnet
+  137: "0xRevampContractAddressForPolygon",  // Polygon Mainnet
+  1: "0xRevampContractAddressForEthereum",     // Ethereum Mainnet
+  8453: "0xRevampContractAddressForBase",   // Base Mainnet
+  42161: "0xRevampContractAddressForArbitrum",  // Arbitrum One
+  10: "0xRevampContractAddressForOptimism"      // Optimism Mainnet
 };
 
 export const SHAREHOLDING_ADDRESSES = {
-  56: "0x964a42102b6c3c353b28d6c53816fb7b245d987b",    // BSC Mainnet
-  137: "0xfE1880392486521FD4E6184bb64db49Bc69779CC",  // Polygon Mainnet
-  1: "0x8e9b857abb19637fbc9db7d3d2fcced36368ca4b",     // Ethereum Mainnet
-  8453: "0x8e9b857abb19637fbc9db7d3d2fcced36368ca4b",   // Base Mainnet
-  42161: "0x8e9b857abb19637fbc9db7d3d2fcced36368ca4b",  // Arbitrum One
-  10: "0x8e9b857abb19637fbc9db7d3d2fcced36368ca4b"      // Optimism Mainnet
+  56: "0xShareholdingContractAddressForBSC",    // BSC Mainnet
+  137: "0xShareholdingContractAddressForPolygon",  // Polygon Mainnet
+  1: "0xShareholdingContractAddressForEthereum",     // Ethereum Mainnet
+  8453: "0xShareholdingContractAddressForBase",   // Base Mainnet
+  42161: "0xShareholdingContractAddressForArbitrum",  // Arbitrum One
+  10: "0xShareholdingContractAddressForOptimism"      // Optimism Mainnet
 };
 
 export const ERC20_ABI = [

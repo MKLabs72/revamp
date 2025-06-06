@@ -16,20 +16,25 @@ import {
 } from "@web3modal/ethers/react";
 import { BrowserProvider, Contract, formatEther } from "ethers";
 
+import HeartbeatPulseLine from './components/HeartbeatPulseLine';
+
+import { SiDiscord, SiTelegram, SiMedium, SiGithub, SiGitbook } from "react-icons/si";
+
+
 import {
   AVAILABLE_NETWORKS,
   DEFI_ADDRESSES,
   ERC20_ABI,
 } from "./constants";
-import FluviaABI from "./abis/FluviaDeFi.json";
+import RevampABI from "./abis/RevampDeFi.json";
 
-//import WSHAREPurchaseModal from "./components/WSHAREPurchaseModal";
 import NavbarComp from "./components/Navbar";
 import MobileNavBar from "./components/MobileNavBar";
 import ShareholdingDashboard from "./components/ShareholdingDashboard";
 import RevampPage from "./components/RevampPage";
 import UserStatsCard from "./components/UserStatsCard";
 import AllAssetsTable from "./components/AllAssetsTable";
+import TopRevampTokensTable from "./components/TopRevampTokensTable";
 
 function App() {
   const { address, isConnected } = useWeb3ModalAccount();
@@ -137,7 +142,7 @@ function App() {
           setListedAssets([]);
           return;
         }
-        const core = new Contract(addr, FluviaABI, rpc);
+        const core = new Contract(addr, RevampABI, rpc);
         const raw = await core.getAllListedTokens();
         const enriched = await Promise.all(
           raw.map(async (item) => {
@@ -184,6 +189,30 @@ function App() {
   const onRevampSuccess  = (tx) => setLastTxHash(tx);
   const onAddListedAsset = (tx) => setLastTxHash(tx);
 
+  // Advanced: 3D parallax card scroll (optional, smooths on desktop only)
+  useEffect(() => {
+    if (window.innerWidth < 641) return; // Desktop only
+    function onScroll() {
+      const cards = document.querySelectorAll('.parallax-card');
+      const table = document.querySelector('.parallax-table');
+      const wh = window.innerHeight;
+      cards.forEach(card => {
+        const rect = card.getBoundingClientRect();
+        let ratio = Math.min(Math.max((wh - rect.top) / wh, 0), 1);
+        card.style.transform = `translateY(${-12 * ratio}px) scale(${1 + 0.024 * ratio})`;
+      });
+      if (table) {
+        const rect = table.getBoundingClientRect();
+        let ratio = Math.min(Math.max((wh - rect.top) / wh, 0), 1);
+        table.style.transform = `translateY(${-18 * ratio}px) scale(${1 + 0.017 * ratio})`;
+      }
+    }
+    window.addEventListener('scroll', onScroll);
+    setTimeout(onScroll, 150);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+  
+
   return (
     <Router>
     <div className="relative min-h-screen">
@@ -194,97 +223,121 @@ function App() {
       <main className="pt-16 pb-5">
         {!isConnected ? (
           <div className="landing-page">
-              {/* ───────────────  HERO  ─────────────── */}
-              <section className="hero">
-                <h1>Stop Bag‑Holding. Start Value‑Holding.</h1>
-                <p>
-                  Revamp is the first protocol that <strong>recycles</strong> illiquid tokens into hard native
-                  currency—at premium, preset rates. <br/>No hype. No persuasion. Just irreversible
-                  supply cleaning and instant liquidity.
-                </p>
-                <div className="btn-container">
-                  <button className="btn-primary" onClick={handleConnectClick}>
-                    Connect &amp; Revamp Now
-                  </button>
-                </div>
-              </section>
+          {/* ───────────────  HERO  ─────────────── */}
+          <section className="hero">
+          <h1>Stop Bag‑Holding. Start Value‑Holding.</h1>
+          <p class="phero">
+            Revamp is the first protocol that <strong>recycles</strong> illiquid tokens into native blockchain currency—at premium, preset rates.<br />
+            No hype. No persuasion. Just code-driven supply cleanup and transparent, on-chain liquidity. Participation is always voluntary and outcomes are algorithmic, not speculative.
+          </p>
+          <div className="container" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <HeartbeatPulseLine />
+          </div>
+          <div className="hero-btn-aligned">
+            <button className="btn-primary" onClick={handleConnectClick}>
+              Connect &amp; Join Revamp
+            </button>
+            <button
+              className="btn-secondary"
+              onClick={() => {
+                document.getElementById("revamp-rates-table").scrollIntoView({ behavior: "smooth" });
+              }}
+            >
+              See Revamp Rates
+            </button>
+          </div>
+        </section>
 
-              {/* ─────────────  INSIGHT ROW 1  ───────────── */}
-              <section className="info-grid">
-                <div className="info-card">
-                  <h2>The Great Crypto Illusion</h2>
-                  <p>
-                    Most tokens aren’t used—they’re <em>priced</em>. That isn’t liquidity;
-                    it’s static noise that traps capital and drags the market down.
-                  </p>
-                </div>
+        {/* ─────────────  INSIGHT ROW 1  ───────────── */}
+        <section className="info-grid parallax-cards">
+          <div className="info-card parallax-card">
+            <h2>The Great Crypto Illusion</h2>
+            <p>
+              Most tokens aren’t used—they’re <em>priced</em>. This isn’t liquidity: it’s static noise, trapping capital and dragging the market down.
+            </p>
+          </div>
+          <div className="info-card parallax-card">
+            <h2>Turn Dead Weight into Flow</h2>
+            <p>
+              Join the revamp pool: submit stagnant tokens and matching native currency at your chosen rate, and start accumulating real, on-chain value as illiquid supply is permanently removed.
+            </p>
+          </div>
+        </section>
 
-                <div className="info-card">
-                  <h2>Turn Dead Weight into Fuel</h2>
-                  <p>
-                    Burn stagnant tokens, collect native currency at a guaranteed revamp rate,
-                    and watch organic value return to the wider ecosystem.
-                  </p>
-                </div>
-              </section>
+        {/* ─────────────  INSIGHT ROW 2  ───────────── */}
+        <section className="info-grid parallax-cards">
+          <div className="info-card parallax-card">
+            <h2>How Revamp Works</h2>
+            <p>
+              1&nbsp;·&nbsp;Connect your wallet&nbsp;&nbsp;❯&nbsp;&nbsp;
+              2&nbsp;·&nbsp;Select asset &amp; join revamp pool&nbsp;&nbsp;❯&nbsp;&nbsp;
+              3&nbsp;·&nbsp;Provide both the asset and network currency<br />
+              Your participation shrinks global supply and generates ongoing rewards—no speculation, just transparent protocol logic.
+            </p>
+          </div>
+          <div className="info-card parallax-card">
+            <h2>No “Moon Shots”—Just Cleanup</h2>
+            <p>
+              Revamp isn’t a token sale or pump. It’s an on-chain recycling engine. The protocol removes excess supply, rewards participation, and helps restore true value to the crypto ecosystem—no empty promises.
+            </p>
+          </div>
+        </section>
 
-              {/* ─────────────  INSIGHT ROW 2  ───────────── */}
-              <section className="info-grid">
-                <div className="info-card">
-                  <h2>How Revamp Works</h2>
-                  <p>
-                    1&nbsp;·&nbsp;Connect your wallet&nbsp;&nbsp;❯&nbsp;&nbsp;
-                    2&nbsp;·&nbsp;Select tokens to revamp&nbsp;&nbsp;❯&nbsp;&nbsp;
-                    3&nbsp;·&nbsp;Deposit &amp; receive native currency<br/>
-                    Every burn shrinks global supply and triggers rewards—in code, not
-                    promises.
-                  </p>
-                </div>
-
-                <div className="info-card">
-                  <h2>No “Moon Shots.” Pure Cleanup.</h2>
-                  <p>
-                    Revamp isn’t another token pitch. It’s post‑speculation infrastructure.
-                    We erase what others shill—and pay you for the rubble.
-                  </p>
-                </div>
-              </section>
-
-              {/* ─────────────  INSIGHT ROW 3  ───────────── */}
-              <section className="info-grid">
-                <div className="info-card">
-                  <div className="info-card-content">
-                    <h2>Own the Burn Engine</h2>
-                    <p>
-                      Buy a share in the protocol’s fixed 100‑unit pool. Earn native‑currency
-                      dividends from <strong>every</strong> listing, delisting, share sale, and
-                      revamp cycle. No dilution. Just flow.
-                    </p>
-                  </div>
-                  <div className="info-card-footer">
-                    <button className="btn-secondary" onClick={handleConnectClick}>
-                      Enter Shareholding Pool
-                    </button>
-                  </div>
-                </div>
-
-                <div className="info-card community">
-                  <div className="info-card-content">
-                    <h2>Join the Movement</h2>
-                    <p>
-                      Plug into our Discord, follow governance decisions, and help steer the
-                      biggest cleanup operation in crypto history.
-                    </p>
-                  </div>
-                  <div className="info-card-footer">
-                    <button className="btn-secondary" onClick={handleConnectClick}>
-                      Join the Community
-                    </button>
-                  </div>
-                </div>
-              </section>
-
+        {/* ─────────────  INSIGHT ROW 3  ───────────── */}
+        <section className="info-grid parallax-cards">
+          <div className="info-card parallax-card">
+            <div className="info-card-content">
+              <h2>Own the Burn Engine</h2>
+              <p>
+                Join the protocol’s fixed 100-share pool—shares never leave the contract. Earn native-currency dividends from every listing, delisting, pool join, and revamp activity. No dilution. No off-chain admin. Just transparent, on-chain participation.
+              </p>
             </div>
+            <div className="info-card-footer info-card-footer-row">
+              <button className="btn-card" onClick={handleConnectClick}>
+                Join ShareHolding Pool
+              </button>
+            </div>
+          </div>
+          <div className="info-card parallax-card community">
+          <div className="info-card-content">
+            <h2>Join the Movement</h2>
+            <p>
+              Plug into our governance forums, follow protocol decisions, and help steer the world’s first cleanup engine for crypto excess. All are welcome—no prior stake required.
+            </p>
+          </div>
+          <div className="community-links" style={{ marginLeft: "auto" }}>
+            <div className="community-links">
+              <a href="https://discord.gg/VsSXFsMd" target="_blank" rel="noopener noreferrer" aria-label="Discord">
+                <SiDiscord className="community-icon discord" size={28} />
+              </a>
+              <a href="https://t.me/rvnwlofficial" target="_blank" rel="noopener noreferrer" aria-label="Telegram">
+                <SiTelegram className="community-icon telegram" size={28} />
+              </a>
+              <a href="https://medium.com/@mklabs72" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+                <SiMedium className="community-icon github" size={28} />
+              </a>
+              <a href="https://github.com/MKLabs72/revamp" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+                <SiGithub className="community-icon github" size={28} />
+              </a>
+              <a href="https://docs.rvnwl.com" target="_blank" rel="noopener noreferrer" aria-label="GitBook">
+                <SiGitbook className="community-icon gitbook" size={28} />
+              </a>
+            </div>
+          </div>
+        </div>
+        </section>
+          <section
+            id="revamp-rates-table"
+            className="parallax-table"
+            style={{
+              width: "100%",
+              maxWidth: 1600,
+              margin: "0 auto",
+              marginTop: 40
+            }}>
+             <TopRevampTokensTable />
+          </section>
+        </div>        
           ) : (
             <Routes>
             <Route path="/" element={<Navigate to="/revamp" replace />} />

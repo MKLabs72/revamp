@@ -5,13 +5,12 @@ import './index.css';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import App from './App';
-import reportWebVitals from './reportWebVitals';
 
 // ← Correct import for ethers‑5 React SDK:
 import { createWeb3Modal, defaultConfig } from '@web3modal/ethers/react';
 
 // 1) Your WalletConnect Cloud project ID
-const projectId = 'e6256e1b1616a0d8f210cd119791b92c';
+const projectId = 'YOUR_REOWNPROJECT_ID';
 
 // 2) Chains you support
 const polygonMainnet = {
@@ -19,7 +18,7 @@ const polygonMainnet = {
   name: 'Polygon',
   currency: 'POL',
   explorerUrl: 'https://polygonscan.com',
-  rpcUrl: 'https://polygon-mainnet.infura.io/v3/9f1e5354e01044d18b20e08585da8330'
+  rpcUrl: 'https://polygon-mainnet.infura.io/v3/YOUR_INFURA_ID'
 };
 const bscMainnet = {
   chainId: 56,
@@ -57,13 +56,13 @@ const ethMainnet = {
   rpcUrl: "https://mainnet.infura.io/v3/YOUR_INFURA_ID"
 };
 
-const selectedChains = [polygonMainnet, bscMainnet, arbMainnet, optMainnet, baseMainnet, ethMainnet];
+const selectedChains = [polygonMainnet];
 
 // 3) Your dapp metadata
 const metadata = {
-  name: 'Revya',
-  description: 'Revya',
-  url: 'https://revphoria.com'
+  name: 'RVNWL',
+  description: 'The Liquidity Renewal Movement',
+  url: 'https://rvnwl.com'
 };
 
 // 4) Initialize Web3Modal once (side‑effect)
@@ -90,5 +89,3 @@ root.render(
     </DndProvider>
   </React.StrictMode>
 );
-
-reportWebVitals();
