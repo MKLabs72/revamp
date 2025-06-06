@@ -2,6 +2,9 @@
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Website](https://img.shields.io/badge/site-rvnwl.com-blue)](https://rvnwl.com)
+[![Docs](https://img.shields.io/badge/docs-GitBook-informational)](https://docs.rvnwl.com/)
+[![Discord](https://img.shields.io/discord/yourid?label=discord)](https://discord.gg/VsSXFsMd)
+
 
 A decentralized, open-source smart contract protocol for recycling illiquid tokens into native blockchain currency, powered by an immutable, shareholding revenue model. No speculation, no admin keys—just algorithmic, on-chain liquidity restoration.
 
@@ -41,11 +44,11 @@ cd contracts
 npm install
 npx hardhat test      # Run unit tests
 
-# To deploy locally
+#### To deploy locally
 npx hardhat node      # Start local network
 npx hardhat run scripts/deploy.js --network localhost
 
-##### Using Remix IDE (Browser-Based)
+#### Using Remix IDE (Browser-Based)
 1. Go to [Remix IDE](https://remix.ethereum.org/)
 
 2. Import the contracts from the /contracts directory (upload or use GitHub import).
@@ -60,18 +63,29 @@ npx hardhat run scripts/deploy.js --network localhost
 
 ### 2. Frontend (React App)
 cd frontend
+
 npm install
+
 npm start
+
 Visit http://localhost:3000 to interact with your local frontend.
 
-🧑‍💻 **Project Structure**
+## 🧑‍💻 **Project Structure**
+
 /contracts         # Solidity smart contracts
+
 /frontend          # React frontend (src/pages/components)
   └─ src/abis      # Contract ABIs
+
 /docs              # (Optional) Protocol and API docs
+
 /scripts           # Automation, deployment scripts
 
-🌐 **Resources**
+
+---
+
+## 🌐 **Resources**
+
 Website / PoC UI: [rvnwl.com](https://rvnwl.com/revamp)
 
 Docs / GitBook: [mklabs72.gitbook.io](https://mklabs72.gitbook.io)
@@ -82,12 +96,15 @@ Telegram: [rvnwlofficial] (https://t.me/rvnwlofficial)
 
 GitHub: [github.com/rvnwl/protocol](https://github.com/MKLabs72/revamp)
 
-🤝 **Contributing**
+## 🤝 **Contributing**
+
 Contributions, audits, and forks are welcome!
 See CONTRIBUTING.md and CODE_OF_CONDUCT.md for details.
 
-⚠️ **Disclaimer**
+## ⚠️ **Disclaimer**
+
 This protocol is provided as-is, with no warranties or guarantees. All smart contract interactions are irreversible once mined. Use at your own risk. See LICENSE for full terms.
 
-🏷️ **Topics**
-defi revamp token-recycling shareholding immutable open-source smart-contracts DAO liquidity blockchain-infrastructure
+## 🏷️ **Topics**
+
+blockchain defi smart-contracts ethereum polygon open-source revamp recycle liquidity recycling native-currency onchain-token-burn supply-cleanup shareholding governance dao protocol transparency composable-solutions immutable trustless
