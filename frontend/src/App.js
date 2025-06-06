@@ -307,19 +307,19 @@ function App() {
           </div>
           <div className="community-links" style={{ marginLeft: "auto" }}>
             <div className="community-links">
-              <a href="https://discord.gg/VsSXFsMd" target="_blank" rel="noopener noreferrer" aria-label="Discord">
+              <a href="https://discord.gg/YOURINVITE" target="_blank" rel="noopener noreferrer" aria-label="Discord">
                 <SiDiscord className="community-icon discord" size={28} />
               </a>
-              <a href="https://t.me/rvnwlofficial" target="_blank" rel="noopener noreferrer" aria-label="Telegram">
+              <a href="https://t.me/PROFILE" target="_blank" rel="noopener noreferrer" aria-label="Telegram">
                 <SiTelegram className="community-icon telegram" size={28} />
               </a>
-              <a href="https://medium.com/@mklabs72" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+              <a href="https://medium.com/@YOURPROFILE" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
                 <SiMedium className="community-icon github" size={28} />
               </a>
-              <a href="https://github.com/MKLabs72/revamp" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+              <a href="https://github.com/YOURPROFILE" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
                 <SiGithub className="community-icon github" size={28} />
               </a>
-              <a href="https://docs.rvnwl.com" target="_blank" rel="noopener noreferrer" aria-label="GitBook">
+              <a href="https://docs.YOURPROJETWEBADDRESS.com" target="_blank" rel="noopener noreferrer" aria-label="GitBook">
                 <SiGitbook className="community-icon gitbook" size={28} />
               </a>
             </div>

@@ -10,7 +10,7 @@ import App from './App';
 import { createWeb3Modal, defaultConfig } from '@web3modal/ethers/react';
 
 // 1) Your WalletConnect Cloud project ID
-const projectId = 'YOUR_REOWNPROJECT_ID';
+const projectId = 'YOUR_REOWN-PROJECT_ID';
 
 // 2) Chains you support
 const polygonMainnet = {

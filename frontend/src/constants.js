@@ -9,21 +9,21 @@ import baseIcon     from "./assets/base.png";
 
 
 export const DEFI_ADDRESSES = {
-  56: "0xRevampContractAddressForBSC",    // BSC Mainnet
-  137: "0xRevampContractAddressForPolygon",  // Polygon Mainnet
-  1: "0xRevampContractAddressForEthereum",     // Ethereum Mainnet
-  8453: "0xRevampContractAddressForBase",   // Base Mainnet
-  42161: "0xRevampContractAddressForArbitrum",  // Arbitrum One
-  10: "0xRevampContractAddressForOptimism"      // Optimism Mainnet
+  56: "RevampContractAddress",    // BSC Mainnet
+  137: "RevampContractAddress",  // Polygon Mainnet
+  1: "RevampContractAddress",     // Ethereum Mainnet
+  8453: "RevampContractAddress",   // Base Mainnet
+  42161: "RevampContractAddress",  // Arbitrum One
+  10: "RevampContractAddress"      // Optimism Mainnet
 };
 
 export const SHAREHOLDING_ADDRESSES = {
-  56: "0xShareholdingContractAddressForBSC",    // BSC Mainnet
-  137: "0xShareholdingContractAddressForPolygon",  // Polygon Mainnet
-  1: "0xShareholdingContractAddressForEthereum",     // Ethereum Mainnet
-  8453: "0xShareholdingContractAddressForBase",   // Base Mainnet
-  42161: "0xShareholdingContractAddressForArbitrum",  // Arbitrum One
-  10: "0xShareholdingContractAddressForOptimism"      // Optimism Mainnet
+  56: "ShareholdingContractAddress",    // BSC Mainnet
+  137: "ShareholdingContractAddress",  // Polygon Mainnet
+  1: "ShareholdingContractAddress",     // Ethereum Mainnet
+  8453: "ShareholdingContractAddress",   // Base Mainnet
+  42161: "ShareholdingContractAddress",  // Arbitrum One
+  10: "ShareholdingContractAddress"      // Optimism Mainnet
 };
 
 export const ERC20_ABI = [
